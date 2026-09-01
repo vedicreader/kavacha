@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "pullup"
+  site-url: "https://Karthik777.github.io/pullup"
+  description: "pulumi on `roids"
+  repo-branch: main
+  repo-url: "https://github.com/Karthik777/pullup"

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kavacha"
+dynamic = ["version"]
+description = "the casing: run a local web app in a native window, and package it as a Mac or Windows application"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "Karthik Rajgopal", email = "karthik.rajgopal@hotmail.com"}]
+keywords = ['py2app', 'py2exe', 'pywebview', 'desktop', 'packaging']
+classifiers = ["Natural Language :: English", "Intended Audience :: Developers",
+               "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3",
+               "Programming Language :: Python :: 3 :: Only"]
+# The spec, the build driver and the bundle surgery need nothing but fastcore: describing an app
+# and checking what a build would do should work on a machine that cannot build one.
+dependencies = ['fastcore>=1.8.17']
+
+[project.optional-dependencies]
+# The native window. Only the platform's own bindings are installed.
+window = ["pywebview>=5.3",
+          "pyobjc-framework-Cocoa>=10.1; sys_platform == 'darwin'",
+          "pyobjc-framework-WebKit>=10.1; sys_platform == 'darwin'",
+          "pythonnet>=3.0.3; sys_platform == 'win32'"]
+icons = ['pillow>=10.0']
+macapp = ["kavacha[window,icons]", "py2app>=0.28.8; sys_platform == 'darwin'"]
+windows = ["kavacha[window,icons]", "py2exe>=0.14.2; sys_platform == 'win32'"]
+dev = ['pytest>=8.0.0', 'nbdev>=2.4.6', 'pillow>=10.0']
+
+[project.urls]
+Repository = "https://github.com/vedicreader/kavacha"
+Documentation = "https://vedicreader.github.io/kavacha"
+
+[project.entry-points.nbdev]
+kavacha = "kavacha._modidx:d"
+
+[tool.setuptools.dynamic]
+version = {attr = "kavacha.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["kavacha"]
+
+[tool.nbdev]
+doc_host = "https://vedicreader.github.io"
+doc_baseurl = "/kavacha"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
