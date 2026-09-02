@@ -304,9 +304,9 @@ def _point(window, url, url_wait=90):
 def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_ready=None,
               on_open_folder=None, keys=()):
     "One native window per workspace URL, until they all close. Blocks, on the main thread."
-    import webview
     ok, why = shell_ready()
     if not ok: raise RuntimeError(why)
+    import webview
     urls = list(urls)
     if not urls: raise ValueError('the desktop shell needs at least one workspace URL')
     titles = list(titles) + [''] * (len(urls) - len(titles))
