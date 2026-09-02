@@ -110,14 +110,25 @@ and before anything signs it. A machine without Xcode 26 still builds a working 
 ## The window
 
 ```python
-from kavacha.window import run_shell, shell_ready
-ok, why = shell_ready()
-run_shell('http://127.0.0.1:8000', title='Demo', size='1440x900')
+from kavacha import MenuItem, Std
+from kavacha.window import run_shell, shell_ready, use_app
+
+use_app('demo', prefix='DEMO_')          # window titles, config dir, and $DEMO_WINDOW_SIZE
+if (ok := shell_ready())[0]:
+    run_shell(['http://127.0.0.1:8000/'], titles=['Demo'],
+              bar=[('File', [MenuItem('save'), Std('Close', 'performClose:', 'w')])],
+              lookup=keymap.get, on_action=dispatch, on_recent=recent_folders)
 ```
 
 A pywebview window over your loopback server, with the macOS menu bar, the Dock menu of recent
 folders, real key equivalents, and the `odoc` Apple Event that opens a folder in a running app.
-Menus are a spec you pass, not something kavacha decides.
+
+`use_app` names the application: window titles, the splash, the configuration directory, and the
+prefix its environment variables carry. `bar` is the menu table. Its rows are `MenuItem` for your
+own actions, `Std` for the rows AppKit implements itself, and `Js` for an expression to evaluate.
+`lookup` maps an action to a `Binding`, which is where labels and key equivalents come from.
+`on_action` runs a picked row. `on_recent` answers the recent-folder list, for the page through
+`window.pywebview.api.recent()` and for the Dock menu. kavacha decides none of them.
 
 ## Status
 
