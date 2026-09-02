@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="what an app is made of, said once, for whichever freezer this platform uses">
+
+<title>spec – kavacha</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-d63a2c9c8df14b07662b36303925c8cc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="spec – kavacha">
+<meta property="og:description" content="what an app is made of, said once, for whichever freezer this platform uses">
+<meta property="og:site_name" content="kavacha">
+<meta name="twitter:title" content="spec – kavacha">
+<meta name="twitter:description" content="what an app is made of, said once, for whichever freezer this platform uses">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">kavacha</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./spec.html">spec</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">kavacha</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./probe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">probe</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bundle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bundle</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./build.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">build</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./window.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">window</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./icons.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">icons</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./menus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">menus</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="spec.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">spec</h1>
+</div>
+
+<div>
+  <div class="description">
+    what an app is made of, said once, for whichever freezer this platform uses
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>What an app is made of, said once, for whichever freezer this platform uses.</p>
+<p>An <a href="https://vedicreader.github.io/kavacha/spec.html#app"><code>App</code></a> is a description, and describing one builds nothing. This module imports nothing but fastcore and the standard library, so a machine that cannot build a Mac app can still say what building one would take.</p>
+<p><code>py2app_options</code> and <code>py2exe_options</code> read the same fields. The platform decides which one a caller asks for, never what the app is.</p>
+<div id="61e68c3c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.122216+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.191208+00:00&quot;,&quot;total&quot;:0.06899497599999904}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/spec.py#L19" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="mypyc_modules" class="level3">
+<h3 class="anchored" data-anchor-id="mypyc_modules">mypyc_modules</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mypyc_modules(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    site:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Compiled accelerators that sit beside a package rather than inside it.</em></p>
+<p><code>chardet</code> is built with mypyc, so importing it imports a top-level extension whose name is a hash of the build. Nothing references it by name, so no scanner finds it, and the package looks complete without it. The hash moves with the version, so it is read from the environment being frozen rather than written down.</p>
+</section>
+</div>
+<div id="907604b1" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.191280+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.193776+00:00&quot;,&quot;total&quot;:0.0024987139999979036}}" data-execution_count="5">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/spec.py#L13" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="tree" class="level3">
+<h3 class="anchored" data-anchor-id="tree">tree</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> tree(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    src, dest, skip:<span class="bu">tuple</span><span class="op">=</span>()</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Every file under <code>src</code> as freezer <code>(dest_dir, [files])</code> pairs, recursively.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/spec.html#tree"><code>tree</code></a> turns a directory into the <code>(dest_dir, [files])</code> pairs both freezers take as <code>data_files</code>. The pairs and the files inside each pair come back sorted, so the same tree gives the same list on every machine and a build is comparable with the one before it.</p>
+<p><code>__pycache__</code> and dotfiles are dropped. <code>skip</code> names further folders, matched on the folder name at any depth. A directory with no files in it gets no pair: a freezer copies files, and there is nothing there to copy.</p>
+<p>The destinations are the paths inside the bundle. The files are the paths on this disk, left as <code>globtastic</code> found them, because that is what the freezer has to read.</p>
+<div id="c8547924" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> tree(src, <span class="st">'demo/static'</span>, skip<span class="op">=</span>[<span class="st">'node_modules'</span>])</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>[(dest, [Path(f).name <span class="cf">for</span> f <span class="kw">in</span> files]) <span class="cf">for</span> dest, files <span class="kw">in</span> data]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>[('demo/static', ['app.css']),
+ ('demo/static/img', ['logo.png']),
+ ('demo/static/js', ['app.js'])]</code></pre>
+</div>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/spec.html#mypyc_modules"><code>mypyc_modules</code></a> reads the environment being frozen rather than a written-down list, because the hash in the name moves with the version. It looks beside the packages in <code>site</code>, which defaults to this interpreter’s <code>purelib</code>, and it matches on the shape of the filename. A module whose name has no <code>__mypyc</code> in it is somebody else’s extension and is left alone.</p>
+<div id="a0d8caa6" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>site <span class="op">=</span> Path(tmp.name)<span class="op">/</span><span class="st">'site'</span><span class="op">;</span> site.mkdir()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> (<span class="st">'chardet__mypyc.cpython-313-darwin.so'</span>, <span class="st">'numpy.cpython-313-darwin.so'</span>): (site<span class="op">/</span>f).write_text(<span class="st">''</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>mypyc_modules(site)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>['chardet__mypyc']</code></pre>
+</div>
+</div>
+<p><code>DEFAULT_EXCLUDES</code> is what a frozen app never wanted and would otherwise carry: the build tooling that froze it, the standard library’s test suite, and the GUI toolkits that arrive as somebody else’s dependency. About 100MB.</p>
+<p><code>GUI_MODULE</code> names the one webview backend each platform loads. <a href="https://vedicreader.github.io/kavacha/spec.html#app.excluded"><code>App.excluded</code></a> uses it to exclude the other two, so what ships is the backend the app can actually open a window with.</p>
+<div id="06169947" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.199797+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.202412+00:00&quot;,&quot;total&quot;:0.002617342000000633}}" data-execution_count="8">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/spec.py#L43" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="app" class="level3">
+<h3 class="anchored" data-anchor-id="app">App</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> App(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    name:<span class="bu">str</span>, entry:<span class="bu">str</span>, version:<span class="bu">str</span><span class="op">=</span><span class="st">'0.0.0'</span>, icon:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, modern_icon:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, identifier:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, summary:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    packages:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, includes:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, excludes:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, grafted:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    unreachable:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, data:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, plist:<span class="bu">dict</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, doc_types:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    extras:<span class="bu">list</span><span class="op">=&lt;</span>factory<span class="op">&gt;</span>, min_macos:<span class="bu">str</span><span class="op">=</span><span class="st">'11.0'</span>, category:<span class="bu">str</span><span class="op">=</span><span class="st">'public.app-category.developer-tools'</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="va">None</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>One desktop app, described once. <a href="https://vedicreader.github.io/kavacha/build.html#build"><code>build</code></a> turns this into whichever freezer fits the platform.</em></p>
+<p><code>packages</code> is the part nobody can guess: a freezer’s scanner cannot see an import made inside a function, which is most of any real application, so packages are named rather than discovered. <code>includes</code> is the same for single modules. Both are additive to what the scanner does find.</p>
+</section>
+</div>
+<p><code>identifier</code> is derived from <code>name</code> when the caller gives none, as <code>org.&lt;name&gt;.&lt;name&gt;</code> lowercased. An app that will be signed or notarized wants a real one.</p>
+<p><code>bundle_name</code> and <code>out</code> follow <code>sys.platform</code>, the machine describing the app, not the platform the app is for. Describing a Mac app on Linux gives <code>Demo</code>, not <code>Demo.app</code>. Both are answers about where this machine would put a build, and only the platform that builds is asked.</p>
+<p><code>info_plist</code> merges the caller’s <code>plist</code> over the defaults, so any of them can be overridden, including the three an app is silently broken without. <code>excluded</code> merges the same way and stays sorted and deduplicated.</p>
+<p>The two options dicts read <code>packages</code>, <code>includes</code>, <code>excludes</code>, <code>plist</code> and <code>icon</code>, and copy every list on the way out. <code>data</code>, <code>grafted</code>, <code>unreachable</code>, <code>extras</code>, <code>modern_icon</code> and <code>version</code> appear in neither: they are read by <a href="https://vedicreader.github.io/kavacha/build.html#build"><code>build</code></a>, <a href="https://vedicreader.github.io/kavacha/bundle.html#finish"><code>finish</code></a> and the bundle surgery, after the freezer has run.</p>
+<div id="e55e01b8" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>app <span class="op">=</span> App(name<span class="op">=</span><span class="st">'Demo'</span>, entry<span class="op">=</span><span class="st">'demo_app.py'</span>, version<span class="op">=</span><span class="st">'1.2.3'</span>, summary<span class="op">=</span><span class="st">'the demo app'</span>,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>          icon<span class="op">=</span><span class="st">'assets/Demo.icns'</span>, packages<span class="op">=</span>[<span class="st">'demo'</span>, <span class="st">'fasthtml'</span>, <span class="st">'uvicorn'</span>],</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>          includes<span class="op">=</span>[<span class="st">'demo.cli'</span>], data<span class="op">=</span>data, extras<span class="op">=</span>[<span class="st">'desktop'</span>])</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>app.identifier, app.bundle_name, <span class="bu">str</span>(app.out(<span class="st">'/build/demo'</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>('org.demo.demo', 'Demo', '/build/demo/dist/Demo')</code></pre>
+</div>
+</div>
+<div id="7df99abb" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>app.info_plist()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'CFBundleName': 'Demo',
+ 'CFBundleDisplayName': 'Demo',
+ 'CFBundleIdentifier': 'org.demo.demo',
+ 'CFBundleVersion': '1.2.3',
+ 'CFBundleShortVersionString': '1.2.3',
+ 'CFBundleGetInfoString': 'the demo app',
+ 'LSApplicationCategoryType': 'public.app-category.developer-tools',
+ 'LSMinimumSystemVersion': '11.0',
+ 'NSHighResolutionCapable': True,
+ 'NSRequiresAquaSystemAppearance': False,
+ 'NSAppTransportSecurity': {'NSAllowsLocalNetworking': True},
+ 'LSEnvironment': {'LANG': 'en_US.UTF-8', 'PYTHONUTF8': '1'}}</code></pre>
+</div>
+</div>
+<p>The three entries nothing else sets. <code>NSAppTransportSecurity</code> is the narrow local-networking exemption rather than <code>NSAllowsArbitraryLoads</code>: without it WKWebView refuses <code>http://127.0.0.1</code>. <code>NSRequiresAquaSystemAppearance</code> is False, or a dark web UI renders against a white window. <code>PYTHONUTF8</code> is in <code>LSEnvironment</code> because it has to be set before the interpreter starts, which nothing written in Python can do.</p>
+<div id="62ec55c9" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>app.py2app_options()[<span class="st">'excludes'</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>['PyQt5',
+ 'PyQt6',
+ 'PySide2',
+ 'PySide6',
+ 'clr',
+ 'gi',
+ 'matplotlib',
+ 'py2app',
+ 'py2exe',
+ 'setuptools',
+ 'test',
+ 'tkinter',
+ 'webview.platforms.gtk',
+ 'webview.platforms.winforms',
+ 'wheel']</code></pre>
+</div>
+</div>
+<p>The two backends this build is not using are in that list, and the one it is using is not.</p>
+<div id="b936c6dc" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> app.py2app_options()</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>o[<span class="st">'packages'</span>].append(<span class="st">'scipy'</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>test_eq(app.packages, [<span class="st">'demo'</span>, <span class="st">'fasthtml'</span>, <span class="st">'uvicorn'</span>])   <span class="co"># the options are a copy, not the spec</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>noisy <span class="op">=</span> App(name<span class="op">=</span><span class="st">'D'</span>, entry<span class="op">=</span><span class="st">'e.py'</span>, excludes<span class="op">=</span>[<span class="st">'mlx'</span>, <span class="st">'mlx'</span>, <span class="st">'tkinter'</span>]).excluded(<span class="st">'darwin'</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>test_eq(noisy.count(<span class="st">'tkinter'</span>), <span class="dv">1</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>test_eq(noisy, <span class="bu">sorted</span>(<span class="bu">set</span>(noisy)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="0b3bca14" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.204006+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.206734+00:00&quot;,&quot;total&quot;:0.002730735000000095}}" data-execution_count="10">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/spec.py#L118" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="doc_types" class="level3">
+<h3 class="anchored" data-anchor-id="doc_types">doc_types</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> doc_types(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    extensions, view_elsewhere:<span class="bu">tuple</span><span class="op">=</span>(<span class="st">'.svg'</span>, <span class="st">'.html'</span>, <span class="st">'.htm'</span>, <span class="st">'.pdf'</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Finder document types for an editor: one entry for folders, one for the files it owns.</em></p>
+<p>A folder stays <code>Alternate</code> — Finder is the right default for one, and this is what puts “Open With” on it and makes a Dock drop mean something. <code>view_elsewhere</code> are the extensions a browser renders and an editor would only show the source of.</p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/spec.html#doc_types"><code>doc_types</code></a> returns two entries whatever the extension list is: one for folders, one for the files the app owns. The folder entry stays <code>Alternate</code>, so Finder keeps opening folders and the app still appears under “Open With” and accepts a Dock drop. The file entry is <code>Owner</code>.</p>
+<p>Extensions come back without the leading dot, sorted, once each. <code>view_elsewhere</code> is compared against the values as given, so pass extensions with the dot for the default to apply.</p>
+<div id="d756ddd4" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>folder, files <span class="op">=</span> doc_types([<span class="st">'.py'</span>, <span class="st">'py'</span>, <span class="st">'.rs'</span>, <span class="st">'.svg'</span>, <span class="st">'.pdf'</span>])</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>files[<span class="st">'CFBundleTypeExtensions'</span>], folder[<span class="st">'LSHandlerRank'</span>], files[<span class="st">'LSHandlerRank'</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>(['py', 'rs'], 'Alternate', 'Owner')</code></pre>
+</div>
+</div>
+<div id="2512b3dc" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>test_eq(files[<span class="st">'CFBundleTypeExtensions'</span>], [<span class="st">'py'</span>, <span class="st">'rs'</span>])   <span class="co"># dotted or not, once each, and no .svg</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>test_eq(folder[<span class="st">'LSItemContentTypes'</span>], [<span class="st">'public.folder'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/kavacha");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

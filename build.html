@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="building the bundle: the right interpreter, a pinned environment, and a stamp saying which commit">
+
+<title>build – kavacha</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-d63a2c9c8df14b07662b36303925c8cc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="build – kavacha">
+<meta property="og:description" content="building the bundle: the right interpreter, a pinned environment, and a stamp saying which commit">
+<meta property="og:site_name" content="kavacha">
+<meta name="twitter:title" content="build – kavacha">
+<meta name="twitter:description" content="building the bundle: the right interpreter, a pinned environment, and a stamp saying which commit">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">kavacha</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./build.html">build</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">kavacha</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./probe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">probe</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bundle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bundle</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./build.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">build</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./window.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">window</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./icons.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">icons</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./menus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">menus</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="build.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">build</h1>
+</div>
+
+<div>
+  <div class="description">
+    building the bundle: the right interpreter, a pinned environment, and a stamp saying which commit
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>Building the bundle: the right interpreter, a pinned environment, and a stamp saying which commit.</p>
+<p>py2app builds on macOS and py2exe builds on Windows, each on its own operating system. Describing a build and asking what it would do works anywhere. <a href="https://vedicreader.github.io/kavacha/build.html#check"><code>check</code></a>, the stamp functions and this page all run on Linux, where no bundle can be built at all, and nothing here builds one.</p>
+<div id="82f7b619" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.131206+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.187807+00:00&quot;,&quot;total&quot;:0.05660334299999903}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L21" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="run" class="level3">
+<h3 class="anchored" data-anchor-id="run">run</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>args, <span class="op">**</span>kw</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+</section>
+</div>
+<p><code>STAMP</code> names the file a build writes inside the bundle, and <a href="https://vedicreader.github.io/kavacha/build.html#read_stamp"><code>read_stamp</code></a> reads back. A bundle without one was not built by this code.</p>
+<p><code>REEXEC</code> is set in the environment of a re-execed build. It is how the second attempt knows it is the second: an interpreter that is still the wrong one reports rather than forking again.</p>
+<p>Every command a build runs goes through <a href="https://vedicreader.github.io/kavacha/build.html#run"><code>run</code></a>. It prints the command before running it, so a build log names what ran. A non-zero exit raises <code>CalledProcessError</code>.</p>
+<div id="8f3ddc7a" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>run(<span class="st">'echo'</span>, <span class="st">'built'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>· echo built</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<pre><code>CompletedProcess(args=['echo', 'built'], returncode=0)</code></pre>
+</div>
+</div>
+<div id="dff03c9b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.189614+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.192902+00:00&quot;,&quot;total&quot;:0.003290288999998836}}" data-execution_count="6">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L26" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="lock_requirements" class="level3">
+<h3 class="anchored" data-anchor-id="lock_requirements">lock_requirements</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lock_requirements(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    root, extras:<span class="bu">tuple</span><span class="op">=</span>(), out:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em><code>uv.lock</code> as a pinned requirements file, or None where uv cannot answer.</em></p>
+<p>pip resolves <code>&gt;=</code> against whatever it finds and keeps whatever it already has, so a build environment goes on shipping the versions it was first made with while the repository moves. The lock is the tested set, and the bundle should carry that one.</p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#lock_requirements"><code>lock_requirements</code></a> writes <code>uv.lock</code> out as a pinned requirements file for the build environment to install from.</p>
+<p>It returns <code>None</code> when the tree has no <code>uv.lock</code>, when <code>uv</code> is not installed, and when <code>uv export</code> fails. None of the three raises. <a href="https://vedicreader.github.io/kavacha/build.html#build_venv"><code>build_venv</code></a> reads <code>None</code> as “resolve from <code>pyproject.toml</code> instead”, so a project without a lock still builds. It ships whatever pip resolved on the day.</p>
+<p><code>out</code> defaults to <code>packaging/.app-venv/app-requirements.txt</code> under <code>root</code>, and its parent directory is created. Nothing is written on any of the <code>None</code> paths.</p>
+<div id="d8c594e6" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>tmp <span class="op">=</span> TemporaryDirectory()<span class="op">;</span> root <span class="op">=</span> Path(tmp.name)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>lock_requirements(root) <span class="kw">is</span> <span class="va">None</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>True</code></pre>
+</div>
+</div>
+<div id="2c5c7f65" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.195103+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.198596+00:00&quot;,&quot;total&quot;:0.003495759000003318}}" data-execution_count="8">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L49" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="build_venv" class="level3">
+<h3 class="anchored" data-anchor-id="build_venv">build_venv</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_venv(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    python, venv, root, extras:<span class="bu">tuple</span><span class="op">=</span>(), force:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A build environment on <code>python</code>: a plain <code>venv</code>, since <code>uv venv</code> links what we are avoiding.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#build_venv"><code>build_venv</code></a> makes the environment the freezer runs in, on <code>python</code> rather than on this interpreter. It is a plain <code>venv</code>. <code>uv venv</code> links back to the interpreter it was made from, which is the thing a framework build is chosen to avoid.</p>
+<p>An environment already there on a different <code>(major, minor)</code> than <code>python</code> is deleted and remade. Reusing one is how an app goes on shipping the standard library of an interpreter nobody meant to build against.</p>
+<p>With a lock the environment installs the pinned set first, then the project with <code>--no-deps</code>, so the lock decides every version. Without one pip resolves from <code>pyproject.toml</code>.</p>
+<p>Nothing on this page calls <a href="https://vedicreader.github.io/kavacha/build.html#build_venv"><code>build_venv</code></a>. It creates a virtual environment and installs into it.</p>
+<div id="17938307" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.200862+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.203283+00:00&quot;,&quot;total&quot;:0.002424007999998423}}" data-execution_count="10">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L100" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="read_stamp" class="level3">
+<h3 class="anchored" data-anchor-id="read_stamp">read_stamp</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> read_stamp(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    bundle</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The stamp <code>bundle</code> was built with, or None when it has none.</em></p>
+</section>
+</div>
+<div id="ce5b53c8" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.203364+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.206114+00:00&quot;,&quot;total&quot;:0.0027528340000060325}}" data-execution_count="11">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L87" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="write_stamp" class="level3">
+<h3 class="anchored" data-anchor-id="write_stamp">write_stamp</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> write_stamp(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    bundle, root, version:<span class="bu">str</span><span class="op">=</span><span class="st">''</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Record which commit the bundle was built from.</em></p>
+<p>A bundle is derived from the tree and nothing else compares them, so an app built before a fix installs over one built after it and reports the version it always did.</p>
+</section>
+</div>
+<div id="5e7839e1" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.206198+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.208647+00:00&quot;,&quot;total&quot;:0.002451403999998547}}" data-execution_count="12">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L82" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="stamp_path" class="level3">
+<h3 class="anchored" data-anchor-id="stamp_path">stamp_path</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stamp_path(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    bundle</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Where the build stamp lives inside <code>bundle</code>, on either platform.</em></p>
+</section>
+</div>
+<div id="aae63530" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.208727+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.211577+00:00&quot;,&quot;total&quot;:0.0028532270000027893}}" data-execution_count="13">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L71" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="git_stamp" class="level3">
+<h3 class="anchored" data-anchor-id="git_stamp">git_stamp</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> git_stamp(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    root, version:<span class="bu">str</span><span class="op">=</span><span class="st">''</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The commit the tree is on and whether it is dirty, or <code>None</code> outside a checkout.</em></p>
+</section>
+</div>
+<p>A bundle is a copy of a tree with nothing pointing back at it. The stamp is the pointer back.</p>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#stamp_path"><code>stamp_path</code></a> puts it inside <code>Contents/Resources</code> for a <code>.app</code> and beside the executable for anything else. The <code>.app</code> suffix is the whole test, so a path names a place before either exists.</p>
+<div id="6835ecb6" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>stamp_path(<span class="st">'/dist/Demo.app'</span>), stamp_path(<span class="st">'/dist/Demo'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>(Path('/dist/Demo.app/Contents/Resources/build.json'),
+ Path('/dist/Demo/build.json'))</code></pre>
+</div>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#git_stamp"><code>git_stamp</code></a> reports the commit, whether the tree had uncommitted changes, the version and the time. It returns <code>None</code> outside a checkout and when <code>git</code> is not installed.</p>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#write_stamp"><code>write_stamp</code></a> writes that into the bundle and returns it. Outside a checkout it still writes one, with <code>commit</code> empty: a build from a tarball has no commit to name, and that is a fact to record rather than a failure. It writes no file when the directory it would write into is missing, which is what a build that produced no bundle leaves behind, and returns the stamp anyway.</p>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#read_stamp"><code>read_stamp</code></a> returns <code>None</code> for a bundle with no stamp and for a stamp that is not readable JSON.</p>
+<div id="61fa6662" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>st <span class="op">=</span> write_stamp(repo<span class="op">/</span><span class="st">'dist'</span><span class="op">/</span><span class="st">'Demo.app'</span>, repo, version<span class="op">=</span><span class="st">'2.0.1'</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>st[<span class="st">'commit'</span>][:<span class="dv">12</span>], st[<span class="st">'dirty'</span>], st[<span class="st">'version'</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>('3b2bbb3a952a', False, '2.0.1')</code></pre>
+</div>
+</div>
+<div id="0da5e6c6" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>read_stamp(repo<span class="op">/</span><span class="st">'dist'</span><span class="op">/</span><span class="st">'Demo.app'</span>) <span class="op">==</span> st</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>True</code></pre>
+</div>
+</div>
+<p>A tree with changes nobody committed stamps <code>dirty</code>, and the build prints that alongside the commit. An app that misbehaves can then be traced to a tree that was never pushed.</p>
+<div id="e2d9206f" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>(repo<span class="op">/</span><span class="st">'x.txt'</span>).write_text(<span class="st">'changed'</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>git_stamp(repo)[<span class="st">'dirty'</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>True</code></pre>
+</div>
+</div>
+<div id="49fe3de7" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.214006+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.217144+00:00&quot;,&quot;total&quot;:0.0031407170000008477}}" data-execution_count="15">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L106" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="check" class="level3">
+<h3 class="anchored" data-anchor-id="check">check</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> check(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    spec, root, venv:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>What a build would do here, without doing it. Answers on any platform, Linux included.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#check"><code>check</code></a> reports what a build would do here, and does none of it.</p>
+<p><code>freezer</code> is py2app on macOS, py2exe on Windows, and nothing anywhere else, because each builds only on its own operating system. <code>out</code> is where the bundle would be written. <code>running</code> holds the pids already running out of that path, which is what <a href="https://vedicreader.github.io/kavacha/build.html#build"><code>build</code></a> refuses to overwrite. <code>pywebview</code> reads <code>MISSING</code> rather than raising, since the machine planning a build often is not the machine that runs the app. On macOS <a href="https://vedicreader.github.io/kavacha/build.html#check"><code>check</code></a> also reports whether this interpreter is a framework build, and which interpreter the build would re-exec into when it is not.</p>
+<div id="fd45620c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>demo <span class="op">=</span> App(name<span class="op">=</span><span class="st">'Demo'</span>, entry<span class="op">=</span><span class="st">'demo_app.py'</span>, version<span class="op">=</span><span class="st">'2.0.1'</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>rep <span class="op">=</span> check(demo, repo)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the interpreter and the output folder are this machine's; the rest is the same anywhere</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>{<span class="op">**</span>rep, <span class="st">'interpreter'</span>: <span class="st">'/proj/.venv/bin/python3'</span>, <span class="st">'out'</span>: <span class="st">'/proj/dist/Demo'</span>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'platform': 'linux',
+ 'interpreter': '/proj/.venv/bin/python3',
+ 'app': 'Demo',
+ 'out': '/proj/dist/Demo',
+ 'freezer': 'none — linux builds nothing; macOS and Windows build on their own OS',
+ 'pywebview': 'MISSING',
+ 'running': []}</code></pre>
+</div>
+</div>
+<div id="b2085c76" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.219886+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.224140+00:00&quot;,&quot;total&quot;:0.0042564139999967665}}" data-execution_count="17">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/build.py#L127" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="build" class="level3">
+<h3 class="anchored" data-anchor-id="build">build</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    spec, root, setup_py, venv:NoneType<span class="op">=</span><span class="va">None</span>, alias:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span>, force:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span>, rebuild_venv:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    identity:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Build <code>spec</code> into <code>root/dist</code>, re-execing into a framework Python where macOS needs one.</em></p>
+<p><code>setup_py</code> is the file that calls <code>setuptools.setup</code> with the freezer options; it runs in the build environment rather than this one, which is the whole reason for the re-exec.</p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#build"><code>build</code></a> runs the freezer, and on macOS it may have to run it under a different interpreter than the one it was called with.</p>
+<p>py2app copies the interpreter’s standard library into the bundle, and only a framework build keeps that library as files it can copy. When this interpreter is not one, <a href="https://vedicreader.github.io/kavacha/build.html#build"><code>build</code></a> finds a framework Python, makes a build environment on it with <a href="https://vedicreader.github.io/kavacha/build.html#build_venv"><code>build_venv</code></a>, and runs itself again under that interpreter with <code>REEXEC</code> set in the environment. The re-execed run that is still not a framework build raises <code>SystemExit</code>. There is no third attempt.</p>
+<p><code>setup_py</code> is run as a subprocess rather than imported. That is what lets it run under the re-execed interpreter, and it is the whole reason the re-exec works.</p>
+<p>A build over a running app raises <code>SystemExit</code> first. py2app writes the bundle in place, and replacing the standard library under a live process breaks every import that process has not made yet, with a zip error naming nothing to do with a build. <code>force</code> builds anyway.</p>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#write_stamp"><code>write_stamp</code></a> runs last, so the bundle on disk names the commit it came from.</p>
+<p>Nothing on this page calls <a href="https://vedicreader.github.io/kavacha/build.html#build"><code>build</code></a>. It needs a freezer, and <a href="https://vedicreader.github.io/kavacha/build.html#check"><code>check</code></a> is what answers without one.</p>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/kavacha");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

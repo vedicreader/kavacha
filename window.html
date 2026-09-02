@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="a native window over a loopback server, and the menus around it">
+
+<title>window – kavacha</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-d63a2c9c8df14b07662b36303925c8cc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="window – kavacha">
+<meta property="og:description" content="a native window over a loopback server, and the menus around it">
+<meta property="og:site_name" content="kavacha">
+<meta name="twitter:title" content="window – kavacha">
+<meta name="twitter:description" content="a native window over a loopback server, and the menus around it">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">kavacha</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./window.html">window</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">kavacha</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./probe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">probe</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bundle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bundle</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./build.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">build</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./window.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">window</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./icons.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">icons</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./menus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">menus</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="window.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">window</h1>
+</div>
+
+<div>
+  <div class="description">
+    a native window over a loopback server, and the menus around it
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>A native window over a loopback server, and the menus around it.</p>
+<p>pywebview is imported inside the functions that need it, never at module scope. Importing <code>kavacha.window</code> on a machine with no window costs nothing, and the parts that decide something run anywhere: the readiness check, the URL wait, the size parsing, the splash, the chord table.</p>
+<p>The Dock, the menu bar and the text-substitution defaults are macOS. <a href="https://vedicreader.github.io/kavacha/window.html#menus"><code>menus</code></a>, <a href="https://vedicreader.github.io/kavacha/window.html#quiet_text_substitution"><code>quiet_text_substitution</code></a>, <a href="https://vedicreader.github.io/kavacha/window.html#keep_running_in_dock"><code>keep_running_in_dock</code></a> and <a href="https://vedicreader.github.io/kavacha/window.html#watch_open_events"><code>watch_open_events</code></a> check <code>sys.platform</code> first and answer <code>[]</code>, False or None off darwin. <a href="https://vedicreader.github.io/kavacha/window.html#dock_menu"><code>dock_menu</code></a>, <a href="https://vedicreader.github.io/kavacha/window.html#_decorate"><code>_decorate</code></a> and the two Objective-C classes do not check, and are reached only from a caller that does.</p>
+<p>Every failure here is printed and swallowed. A missing inline browser, a menu bar that will not build, a window that will not come back: the app runs without them. <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> is the exception, and it raises before it opens anything.</p>
+<p><a href="https://vedicreader.github.io/kavacha/probe.html#backend"><code>backend</code></a>, <a href="https://vedicreader.github.io/kavacha/probe.html#shell_ready"><code>shell_ready</code></a> and <a href="https://vedicreader.github.io/kavacha/probe.html#wait_for_http"><code>wait_for_http</code></a> also exist in <code>probe</code>. The two <a href="https://vedicreader.github.io/kavacha/probe.html#wait_for_http"><code>wait_for_http</code></a> differ, and the difference is in the section below.</p>
+<p><code>APP_NAME</code> and <code>CFG</code> are read from the environment once, at import. A host that wants its own name or its own configuration directory sets <code>$KAVACHA_APP_NAME</code> or <code>$KAVACHA_CFG</code> before importing this module. Setting either afterwards changes nothing.</p>
+<p>Reading them creates nothing on disk.</p>
+<div id="f89c45d4" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.266714+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.272854+00:00&quot;,&quot;total&quot;:0.00614160299999611}}" data-execution_count="10">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L34" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="errstr" class="level3">
+<h3 class="anchored" data-anchor-id="errstr">errstr</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> errstr(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    e</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#errstr"><code>errstr</code></a> names the exception type as well as its message, and every printed failure in this module goes through it. A <code>KeyError</code> prints its key and nothing else, an <code>ImportError</code> names a module and not what wanted it, and several of these exceptions carry an empty message. The type is what makes the printed line worth reading.</p>
+<div id="4b463067" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.272934+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.273548+00:00&quot;,&quot;total&quot;:0.0006163589999985675}}" data-exec_doc="true" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>errstr(<span class="pp">ValueError</span>(<span class="st">'port 9223 is in use'</span>)), errstr(<span class="pp">KeyError</span>(<span class="st">'cocoa'</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="11">
+<pre><code>('ValueError: port 9223 is in use', "KeyError: 'cocoa'")</code></pre>
+</div>
+</div>
+<p><code>DEFAULT_SIZE</code> is the size a window opens at. <code>MIN_SIZE</code> is two things: the floor <a href="https://vedicreader.github.io/kavacha/window.html#window_size"><code>window_size</code></a> enforces on a requested size, and the <code>min_size</code> every window is built with, so the size a user can drag a window down to is the size the app is willing to open at.</p>
+<p><code>STORAGE</code> is the web engine’s own profile: cookies, local storage, and whatever else it keeps between runs. It sits inside <code>CFG</code>. <a href="https://vedicreader.github.io/kavacha/window.html#make_window"><code>make_window</code></a> creates it, and that is the only directory this module creates.</p>
+<p><code>EAGER_CDP</code> is the name of the environment variable <a href="https://vedicreader.github.io/kavacha/window.html#warm_cdp"><code>warm_cdp</code></a> reads, not its value.</p>
+<div id="5d0e7c9f" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.275494+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.276380+00:00&quot;,&quot;total&quot;:0.0008887239999992858}}" data-exec_doc="true" data-execution_count="17">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DEFAULT_SIZE, MIN_SIZE, <span class="bu">str</span>(STORAGE).replace(<span class="bu">str</span>(CFG), <span class="st">'/cfg'</span>)   <span class="co"># the config directory stands in</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="17">
+<pre><code>((1440, 900), (900, 560), '/cfg/webview')</code></pre>
+</div>
+</div>
+<div id="070f9336" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.277905+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.280313+00:00&quot;,&quot;total&quot;:0.0024105580000011173}}" data-execution_count="19">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L52" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="shellapi" class="level3">
+<h3 class="anchored" data-anchor-id="shellapi">ShellApi</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ShellApi(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>args, <span class="op">**</span>kwargs</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>What the page may ask the native window for, as <code>window.pywebview.api.*</code>.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#shellapi"><code>ShellApi</code></a> is the whole of what the page may ask the native window for. pywebview exposes each public method as <code>window.pywebview.api.&lt;name&gt;</code> and calls it on a thread of its own, so nothing here may assume the main thread.</p>
+<p><code>on_open_folder</code> and <code>on_recent</code> belong to the host and are set by <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a>. Until they are set, <code>open_folder</code> returns False and <code>recent</code> returns an empty list. An empty path returns False without calling the host.</p>
+<p><code>open_folder</code> returns once the host has been called. True says the request was accepted, not that a window appeared: <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> wraps the host’s callback so the work leaves the calling thread immediately.</p>
+<p><code>recent</code> returns a list, whatever the host’s callback returns. The page is given a JSON array either way.</p>
+<p><code>pick_folder</code> is the platform’s own folder chooser and is the one method that needs pywebview. It returns None when there is no active window, when the chooser was cancelled, and when the chooser raised. Nothing on this page exercises it.</p>
+<div id="37446ad8" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.280433+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.281412+00:00&quot;,&quot;total&quot;:0.0009813639999975976}}" data-exec_doc="true" data-execution_count="20">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>api <span class="op">=</span> ShellApi()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>opened <span class="op">=</span> []</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>api.on_open_folder <span class="op">=</span> opened.append</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>api.open_folder(<span class="st">'/proj/demo'</span>), api.open_folder(<span class="st">''</span>), opened</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="20">
+<pre><code>(True, False, ['/proj/demo'])</code></pre>
+</div>
+</div>
+<div id="e295f514" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.282357+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.285696+00:00&quot;,&quot;total&quot;:0.003342648000000281}}" data-execution_count="22">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/probe.py#L34" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="backend" class="level3">
+<h3 class="anchored" data-anchor-id="backend">backend</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> backend(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    platform:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>pywebview’s GUI name for <code>platform</code>, or None where Leela has no supported webview.</em></p>
+</section>
+</div>
+<div id="c4d7307c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.286691+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.289237+00:00&quot;,&quot;total&quot;:0.0025483950000051436}}" data-execution_count="24">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/probe.py#L38" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="shell_ready" class="level3">
+<h3 class="anchored" data-anchor-id="shell_ready">shell_ready</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> shell_ready(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    platform:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em><code>(ok, why)</code>: whether a native window can be opened here, and what is missing if not.</em></p>
+</section>
+</div>
+<p>A platform absent from <code>BACKENDS</code> has no native window here. <a href="https://vedicreader.github.io/kavacha/probe.html#shell_ready"><code>shell_ready</code></a> answers that case and the missing-pywebview case in one pair. <code>ok</code> is False for both and <code>why</code> says which it was. When <code>ok</code> is True, <code>why</code> is the pywebview GUI name, which <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> passes on as <code>gui</code>.</p>
+<p>Importing <code>webview</code> is how <a href="https://vedicreader.github.io/kavacha/probe.html#shell_ready"><code>shell_ready</code></a> finds out. The <code>ImportError</code> is the answer rather than a failure, and this is the only place the module decides whether a window is possible.</p>
+<div id="72efa6f9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.289316+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.289899+00:00&quot;,&quot;total&quot;:0.0005848760000048969}}" data-exec_doc="true" data-execution_count="25">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>backend(<span class="st">'darwin'</span>), backend(<span class="st">'win32'</span>), backend(<span class="st">'plan9'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="25">
+<pre><code>('cocoa', 'edgechromium', None)</code></pre>
+</div>
+</div>
+<div id="b4382ac6" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.289975+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.290564+00:00&quot;,&quot;total&quot;:0.0005901309999956084}}" data-exec_doc="true" data-execution_count="26">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>test_eq(shell_ready(<span class="st">'plan9'</span>), (<span class="va">False</span>, <span class="st">'no native webview backend for plan9'</span>))</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ok, why <span class="op">=</span> shell_ready(<span class="st">'darwin'</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>test_eq(ok, why <span class="op">==</span> <span class="st">'cocoa'</span>)   <span class="co"># the gui name when a window can be opened, what is missing when not</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="06f3a693" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.291539+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.294212+00:00&quot;,&quot;total&quot;:0.002675631000002454}}" data-execution_count="28">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/probe.py#L74" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="wait_for_http" class="level3">
+<h3 class="anchored" data-anchor-id="wait_for_http">wait_for_http</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wait_for_http(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    url, timeout:<span class="bu">int</span><span class="op">=</span><span class="dv">60</span>, interval:<span class="bu">float</span><span class="op">=</span><span class="fl">0.1</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Block until <code>url</code> answers, or <code>timeout</code> passes. True if the server came up.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/probe.html#wait_for_http"><code>wait_for_http</code></a> polls until the server answers or <code>timeout</code> passes. It never raises, and False means the timeout passed.</p>
+<p>An error status is an answer. A 4xx proves something is listening on the port, which is the question being asked, so a workspace whose root is not routed yet is not waited out for a minute. <code>probe.wait_for_http</code> treats a 404 as a not-yet instead, and the two are not interchangeable.</p>
+<p>Every other exception is a not-yet. A connection refused while the server is still binding its port is the ordinary case, not a failure.</p>
+<div id="efeaefc5" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.297843+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.320426+00:00&quot;,&quot;total&quot;:0.02258537699999863}}" data-exec_doc="true" data-execution_count="30">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>wait_for_http(url), wait_for_http(url <span class="op">+</span> <span class="st">'missing'</span>, timeout<span class="op">=</span><span class="fl">.3</span>)   <span class="co"># a 404 proves the port is live</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="30">
+<pre><code>(True, True)</code></pre>
+</div>
+</div>
+<div id="61405993" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.321697+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.324225+00:00&quot;,&quot;total&quot;:0.0025299919999994813}}" data-execution_count="32">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L104" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="start_cdp" class="level3">
+<h3 class="anchored" data-anchor-id="start_cdp">start_cdp</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> start_cdp(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    port:<span class="bu">int</span><span class="op">=</span><span class="dv">9223</span>, headless:<span class="bu">bool</span><span class="op">=</span><span class="va">True</span>, wait:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span>, timeout:NoneType<span class="op">=</span><span class="va">None</span>, profile:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Bring up the persistent CDP Chrome the inline browser renders into, on a thread.</em></p>
+</section>
+</div>
+<div id="4b908505" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.325020+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.327153+00:00&quot;,&quot;total&quot;:0.0021348709999955418}}" data-execution_count="34">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L119" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="warm_cdp" class="level3">
+<h3 class="anchored" data-anchor-id="warm_cdp">warm_cdp</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> warm_cdp(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    port:<span class="bu">int</span><span class="op">=</span><span class="dv">9223</span>, profile:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Start Chrome at launch only if <code>$KAVACHA_CDP_EAGER</code> asks for it. See <code>docs/desktop.md</code>.</em></p>
+</section>
+</div>
+<p>The inline browser is a Chrome the host drives over CDP, brought up by <code>fossick</code>. <a href="https://vedicreader.github.io/kavacha/window.html#start_cdp"><code>start_cdp</code></a> boots it on a daemon thread and returns that thread. Nothing about the window depends on it. fossick absent, Chrome absent or a boot that fails prints one line and the app carries on without an inline browser. <code>wait=True</code> joins the thread, bounded by <code>timeout</code>, or by 30 seconds when there is none.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#warm_cdp"><code>warm_cdp</code></a> is the call made at launch. It starts nothing unless <code>$KAVACHA_CDP_EAGER</code> is <code>1</code>, <code>true</code> or <code>yes</code>. The value is stripped before it is compared and the comparison is case-sensitive, so <code>TRUE</code> is not one of them. Anything else, including an unset variable, returns None and boots no thread.</p>
+<div id="fb5cfce1" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.328391+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.330707+00:00&quot;,&quot;total&quot;:0.0023176399999940145}}" data-execution_count="36">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L125" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="window_size" class="level3">
+<h3 class="anchored" data-anchor-id="window_size">window_size</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> window_size(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    spec:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em><code>WIDTHxHEIGHT</code> from <code>spec</code> or <code>$KAVACHA_WINDOW_SIZE</code>, else the default.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#window_size"><code>window_size</code></a> reads <code>WIDTHxHEIGHT</code> from <code>spec</code>, or from <code>$KAVACHA_WINDOW_SIZE</code> when <code>spec</code> is empty. The separator is matched in either case.</p>
+<p>A size below <code>MIN_SIZE</code> in either dimension is refused, and so is anything that will not parse. Both give <code>DEFAULT_SIZE</code>. Nothing raises and nothing warns, so a mistyped variable opens the default window rather than no window.</p>
+<div id="68fd7bff" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.330795+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.331485+00:00&quot;,&quot;total&quot;:0.0006920289999996498}}" data-exec_doc="true" data-execution_count="37">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>window_size(<span class="st">'1600x1000'</span>), window_size(<span class="st">'1280X800'</span>), window_size(<span class="st">'320x200'</span>), window_size(<span class="st">'wide'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="37">
+<pre><code>((1600, 1000), (1280, 800), (1440, 900), (1440, 900))</code></pre>
+</div>
+</div>
+<p>The splash is inline HTML referring to nothing outside itself, so a window has something to show before any server exists and asks the network for nothing while it waits.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#_unreachable"><code>_unreachable</code></a> is the same page with the waiting line replaced by the address that did not answer, in red. A window whose server never came up says which address failed rather than showing an empty frame.</p>
+<div id="f5bb4601" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.332707+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.333258+00:00&quot;,&quot;total&quot;:0.0005524340000064853}}" data-exec_doc="true" data-execution_count="40">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>_unreachable(<span class="st">'http://127.0.0.1:8000/'</span>).splitlines()[<span class="op">-</span><span class="dv">1</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="40">
+<pre><code>'&lt;div&gt;&lt;b&gt;leela&lt;/b&gt;&lt;i style="color:#e06c75"&gt;the workspace at http://127.0.0.1:8000/ did not answer&lt;/i&gt;&lt;/div&gt;'</code></pre>
+</div>
+</div>
+<div id="f12f0671" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.335448+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.337648+00:00&quot;,&quot;total&quot;:0.0022038850000001275}}" data-execution_count="45">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L163" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="dock_menu" class="level3">
+<h3 class="anchored" data-anchor-id="dock_menu">dock_menu</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dock_menu(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    on_folder, recent:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The Dock’s own menu: the folders last open, newest first. <code>recent</code> is the host’s list of paths.</em></p>
+</section>
+</div>
+<p>The Dock menu is the folders last open, at most <code>DOCK_RECENT</code> of them, in the order the host gave them. Nothing here sorts the list. The limit is what keeps the menu a shortcut rather than a file browser.</p>
+<p>A row is titled by the folder’s own name: the basename with a trailing separator removed, and the whole path when that leaves nothing, which is the case for <code>/</code>. The full path is both the tooltip and the represented object, and the represented object is what comes back when the row fires.</p>
+<p>An empty list still gives a menu. It holds one disabled row, so the Dock menu never looks broken.</p>
+<p><code>_dock_target</code> is built once and kept for the life of the process. An <code>NSMenuItem</code> holds no strong reference to a Python object, so a target kept nowhere else is collected and its rows do nothing.</p>
+<p>Every function here needs AppKit. Nothing on this page exercises them.</p>
+<p>Closing the last window hides it rather than quitting, so the app stays in the Dock. <code>windowShouldClose_</code> orders the window out and answers NO. Clicking the Dock icon with no window visible orders the most recently hidden one back in. Cmd+Q still quits.</p>
+<p><code>_hidden</code> is a stack, and a window closed twice is moved to the top of it rather than listed twice.</p>
+<p>The two delegate classes are built on first use and kept in <code>_delegates</code>. An Objective-C class name is global to the runtime, so a second definition of either is an error rather than a second class.</p>
+<p><code>_on_folder</code> is module state because <code>applicationDockMenu_</code> is handed nothing but the application. <a href="https://vedicreader.github.io/kavacha/window.html#keep_running_in_dock"><code>keep_running_in_dock</code></a> sets it.</p>
+<p>Both subclasses derive from pywebview’s cocoa <code>BrowserView</code> delegates, so <a href="https://vedicreader.github.io/kavacha/window.html#_dock_delegates"><code>_dock_delegates</code></a> cannot be built on this page.</p>
+<div id="2b208210" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.341393+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.343400+00:00&quot;,&quot;total&quot;:0.002009936999996853}}" data-execution_count="51">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L228" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="quiet_text_substitution" class="level3">
+<h3 class="anchored" data-anchor-id="quiet_text_substitution">quiet_text_substitution</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> quiet_text_substitution():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Turn off the system’s autocorrect for this app. True when it took.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#quiet_text_substitution"><code>quiet_text_substitution</code></a> writes the seven keys to this application’s own defaults domain. Nothing outside the application changes.</p>
+<p>Off darwin it returns False and writes nothing. A pyobjc that will not import prints one line and returns False. Autocorrect left on is a worse editor, not a broken app, so nothing here raises.</p>
+<div id="7f9515d7" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.344269+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.346515+00:00&quot;,&quot;total&quot;:0.002248387000001628}}" data-execution_count="53">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L241" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="keep_running_in_dock" class="level3">
+<h3 class="anchored" data-anchor-id="keep_running_in_dock">keep_running_in_dock</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> keep_running_in_dock(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    on_folder:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Hide the last window rather than quit, and fill the Dock menu. Reopen shows one window. Cmd+Q quits.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#keep_running_in_dock"><code>keep_running_in_dock</code></a> replaces pywebview’s two delegate classes. It has an effect only before any window is built, which is why <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> calls it before the first <a href="https://vedicreader.github.io/kavacha/window.html#make_window"><code>make_window</code></a>.</p>
+<p>It returns False and prints when pywebview’s cocoa backend cannot be imported. <code>_on_folder</code> is set after that import succeeds, so a failed call leaves nothing half-installed.</p>
+<p><code>WINDOW_KW</code> is what every window is built with. The title and the size are the two things a caller may vary and are not in it, so a window opened at launch and one opened for a folder an hour later are the same window.</p>
+<p><code>min_size</code> is <code>MIN_SIZE</code>, the floor <a href="https://vedicreader.github.io/kavacha/window.html#window_size"><code>window_size</code></a> enforces.</p>
+<div id="76a83d9a" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.347266+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.348011+00:00&quot;,&quot;total&quot;:0.0007461829999968472}}" data-exec_doc="true" data-execution_count="55">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>WINDOW_KW</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="55">
+<pre><code>{'min_size': (900, 560),
+ 'background_color': '#171b20',
+ 'text_select': True,
+ 'zoomable': True,
+ 'easy_drag': False}</code></pre>
+</div>
+</div>
+<div id="3ccbb756" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.349558+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.351338+00:00&quot;,&quot;total&quot;:0.0017841450000020131}}" data-execution_count="59">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L267" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="shell_api" class="level3">
+<h3 class="anchored" data-anchor-id="shell_api">shell_api</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> shell_api():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The one <a href="https://vedicreader.github.io/kavacha/window.html#shellapi"><code>ShellApi</code></a> every window shares.</em></p>
+</section>
+</div>
+<p>One <a href="https://vedicreader.github.io/kavacha/window.html#shellapi"><code>ShellApi</code></a> is shared by every window. The page reaches it as <code>window.pywebview.api</code>, and <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> sets <code>on_open_folder</code> on it once, so a window opened later answers a page the same way the first one does.</p>
+<p><code>_windows</code> maps a caller’s key to the window showing it. <a href="https://vedicreader.github.io/kavacha/window.html#open_window"><code>open_window</code></a> and <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> are what fill it. A key is whatever the host calls a workspace, and two calls with one key mean one window.</p>
+<div id="766093fd" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.351430+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.352216+00:00&quot;,&quot;total&quot;:0.0007877170000014644}}" data-exec_doc="true" data-execution_count="60">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>shell_api() <span class="kw">is</span> shell_api()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="60">
+<pre><code>True</code></pre>
+</div>
+</div>
+<div id="ba38782c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.353024+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.355253+00:00&quot;,&quot;total&quot;:0.002230973000003189}}" data-execution_count="62">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L274" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="make_window" class="level3">
+<h3 class="anchored" data-anchor-id="make_window">make_window</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_window(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    title:<span class="bu">str</span><span class="op">=</span><span class="st">'app'</span>, size:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A window on the splash, waiting for a URL.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#make_window"><code>make_window</code></a> opens on the splash, not on a URL. The window exists at once and <a href="https://vedicreader.github.io/kavacha/window.html#_point"><code>_point</code></a> gives it the workspace when the server answers.</p>
+<p>The size is <a href="https://vedicreader.github.io/kavacha/window.html#window_size"><code>window_size()</code></a> unless the caller passes one, so <code>$KAVACHA_WINDOW_SIZE</code> reaches every window built without an explicit size. An empty title falls back to <code>APP_NAME</code>. <code>STORAGE</code> is created here.</p>
+<p>It needs pywebview. Nothing on this page opens a window.</p>
+<div id="30686501" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.356111+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.358534+00:00&quot;,&quot;total&quot;:0.00242378200000104}}" data-execution_count="64">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L283" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="off_main_thread" class="level3">
+<h3 class="anchored" data-anchor-id="off_main_thread">off_main_thread</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> off_main_thread(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    fn, name:<span class="bu">str</span><span class="op">=</span><span class="st">'kavacha-shell'</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Run <code>fn(arg)</code> on a thread of its own; <code>create_window</code> builds nothing on the main thread.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#off_main_thread"><code>off_main_thread</code></a> wraps a one-argument callback so that calling it starts a thread and returns. Every native caller reaches Python on the main thread: a Dock menu row, an Apple Event, a <code>js_api</code> call. None of them may build a window there, because the main thread is inside the GUI loop. <a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> wraps the host’s open-folder callback once and passes the wrapper to everything that can open a folder.</p>
+<p>The wrapper returns None. Nothing comes back, and an exception inside <code>fn</code> ends its own thread and reaches no caller.</p>
+<p><code>name</code> is the thread name, which is what a stack dump shows.</p>
+<div id="5d626fb0" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.358625+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.359978+00:00&quot;,&quot;total&quot;:0.0013543170000005489}}" data-exec_doc="true" data-execution_count="65">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>seen, done <span class="op">=</span> [], Event()</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>go <span class="op">=</span> off_main_thread(<span class="kw">lambda</span> p: (seen.append((p, threading.current_thread().name)), done.<span class="bu">set</span>()))</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>go(<span class="st">'/proj/demo'</span>)<span class="op">;</span> done.wait(<span class="dv">5</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>seen</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="65">
+<pre><code>[('/proj/demo', 'kavacha-shell')]</code></pre>
+</div>
+</div>
+<div id="e476d434" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.361093+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.363791+00:00&quot;,&quot;total&quot;:0.002699522999996873}}" data-execution_count="67">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L289" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="open_window" class="level3">
+<h3 class="anchored" data-anchor-id="open_window">open_window</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> open_window(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    url, title:<span class="bu">str</span><span class="op">=</span><span class="st">'app'</span>, key:NoneType<span class="op">=</span><span class="va">None</span>, url_wait:<span class="bu">int</span><span class="op">=</span><span class="dv">90</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A window on <code>url</code>, raised rather than opened twice when <code>key</code> already has one.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#open_window"><code>open_window</code></a> with a <code>key</code> that already has a window raises that window instead of opening a second one. cocoa answers <code>show</code> with a <code>callAfter</code>, so any thread may ask. A window that will not come back prints and is returned anyway, because there is no better window to give the caller.</p>
+<p>Without a <code>key</code> there is no bookkeeping and every call opens a window.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#_point"><code>_point</code></a> waits for the server and then loads the URL. A server that has not answered within <code>url_wait</code> leaves the window on <a href="https://vedicreader.github.io/kavacha/window.html#_unreachable"><code>_unreachable</code></a>, naming the address. <a href="https://vedicreader.github.io/kavacha/window.html#_point"><code>_point</code></a> never leaves a window on the splash.</p>
+<div id="fca49e58" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.365973+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.367057+00:00&quot;,&quot;total&quot;:0.001085334999999077}}" data-exec_doc="true" data-execution_count="70">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>_windows[<span class="st">'demo'</span>], _windows[<span class="st">'gone'</span>] <span class="op">=</span> _Win(), _Win(fail<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> <span class="st">'http://127.0.0.1:8000/'</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>open_window(u, <span class="st">'Demo'</span>, key<span class="op">=</span><span class="st">'demo'</span>).calls, open_window(u, <span class="st">'Notes'</span>, key<span class="op">=</span><span class="st">'gone'</span>).calls</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  could not raise the window for Notes: RuntimeError: the window is gone</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="70">
+<pre><code>(['show'], [])</code></pre>
+</div>
+</div>
+<div id="86107551" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.369447+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.372486+00:00&quot;,&quot;total&quot;:0.0030411450000045193}}" data-execution_count="72">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L307" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="run_shell" class="level3">
+<h3 class="anchored" data-anchor-id="run_shell">run_shell</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_shell(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    urls, titles:<span class="bu">tuple</span><span class="op">=</span>(), url_wait:<span class="bu">int</span><span class="op">=</span><span class="dv">90</span>, gui:NoneType<span class="op">=</span><span class="va">None</span>, icon:NoneType<span class="op">=</span><span class="va">None</span>, size:NoneType<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    on_ready:NoneType<span class="op">=</span><span class="va">None</span>, on_open_folder:NoneType<span class="op">=</span><span class="va">None</span>, keys:<span class="bu">tuple</span><span class="op">=</span>()</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>One native window per workspace URL, until they all close. Blocks, on the main thread.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#run_shell"><code>run_shell</code></a> is the desktop entry point. It opens one window per workspace URL, starts the GUI loop, and blocks until every window is closed. It has to be called on the main thread.</p>
+<p>It refuses before it builds anything. A platform with no backend, or a missing pywebview, raises <code>RuntimeError</code> carrying the reason <a href="https://vedicreader.github.io/kavacha/probe.html#shell_ready"><code>shell_ready</code></a> gave. An empty <code>urls</code> raises <code>ValueError</code>.</p>
+<p><code>titles</code> and <code>keys</code> are padded to the length of <code>urls</code>, so a caller may name the first window and leave the rest.</p>
+<p>The order on darwin is fixed. Text substitution is turned off before a web view can ask for it, and the delegates are replaced before any window takes one.</p>
+<p>One menu bar list is built and shared by every window. pywebview rebuilds the bar whenever the focused window’s menu is not the one it built last, and a window opened for a folder later has no menu of its own.</p>
+<p>The URL wait happens inside <code>load</code>, which pywebview calls once the GUI loop is up. A server that takes a minute to start still puts a window on screen at once.</p>
+<div id="db6dd3d3" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.373341+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.375055+00:00&quot;,&quot;total&quot;:0.001716020000003482}}" data-execution_count="74">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L340" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="menus" class="level3">
+<h3 class="anchored" data-anchor-id="menus">menus</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> menus():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The menu bar, or an empty bar off macOS. Its own function so a test can build one.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#menus"><code>menus</code></a> returns an empty list off darwin, and an empty list when any part of building the bar fails. An empty list is what <code>webview.start</code> takes for no menus, so a bar that cannot be built costs the menus and not the app.</p>
+<p><code>SHOW_DEFAULT_MENUS</code> is turned off because <code>BAR</code> carries the rows macOS expects, in the order it expects them.</p>
+<div id="459d3e13" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.376407+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.378584+00:00&quot;,&quot;total&quot;:0.0021789470000044275}}" data-execution_count="76">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L354" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="watch_open_events" class="level3">
+<h3 class="anchored" data-anchor-id="watch_open_events">watch_open_events</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> watch_open_events(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>    on_folder</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Answer the <code>odoc</code> Apple Event Finder sends a running app. macOS only, best-effort.</em></p>
+</section>
+</div>
+<p>Finder sends a running application an <code>odoc</code> Apple Event when a folder is dropped on its Dock icon or opened with it. An application that registers no handler is sent the event and drops it, and nothing opens.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#watch_open_events"><code>watch_open_events</code></a> registers one and returns the handler, so a caller can invoke it directly. It returns None off darwin, when Foundation will not import, and when registration fails.</p>
+<p>The handler passes on only paths that are directories on this machine. A <code>file:</code> URL is converted through <code>NSURL</code>, and anything else is taken as a path already. An event it cannot read prints and is dropped.</p>
+<p><code>_RecentTarget</code> and <code>_OpenHandler</code> are Objective-C classes, defined at import where pyobjc is present and bound to None where it is not. The class body runs at import, so any failure inside it, not only a missing pyobjc, leaves both names None. Every caller of either is behind a <code>sys.platform</code> check.</p>
+<p><code>CMD</code>, <code>CTRL</code>, <code>ALT</code> and <code>SHIFT</code> are AppKit’s <code>NSEventModifierFlag</code> bits, written out rather than read from AppKit so that a chord can be built on any machine.</p>
+<p><code>_MODS</code> is the spelling the host’s keymap uses. <code>mod</code> and <code>cmd</code> are one bit: <code>mod</code> is the portable name for the platform’s own modifier, and on macOS that is Command. <code>opt</code> and <code>alt</code> are one bit. <code>hyper</code> is all four.</p>
+<p><code>_NAMED</code> maps the key names a keymap uses to the single characters AppKit expects. The arrows and the page, home, end and delete keys are private-use characters, which is how AppKit spells them. The rest are control characters.</p>
+<div id="12e4c0eb" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.382231+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.384156+00:00&quot;,&quot;total&quot;:0.001926143000005709}}" data-execution_count="82">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L426" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="mac_key" class="level3">
+<h3 class="anchored" data-anchor-id="mac_key">mac_key</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mac_key(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    chord</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em><code>(keyEquivalent, modifierMask)</code> for one chord, or None when AppKit cannot spell it.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#mac_key"><code>mac_key</code></a> turns one chord into the pair an <code>NSMenuItem</code> wants. None means AppKit cannot spell it, and the row is left with no key equivalent rather than a wrong one.</p>
+<p>Only the first stroke is read. A keymap entry written as a sequence, with a space between strokes, has no key equivalent, and its first stroke is what AppKit can install.</p>
+<p>A single uppercase base carries its own shift, so <code>mod+P</code> and <code>mod+shift+p</code> give the same pair. The base is lowercased afterwards: AppKit takes the shift in the modifier mask and the unshifted character as the key.</p>
+<p>None comes back for a modifier name that is not in <code>_MODS</code>, and for a base that is not one character after <code>_NAMED</code> is applied. <code>f5</code> is the ordinary case of the second.</p>
+<div id="85e14df9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.384214+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.384900+00:00&quot;,&quot;total&quot;:0.0006867680000013365}}" data-exec_doc="true" data-execution_count="83">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>mac_key(<span class="st">'mod+p'</span>), mac_key(<span class="st">'mod+f5'</span>), mac_key(<span class="st">'meta+p'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="83">
+<pre><code>(('p', 1048576), None, None)</code></pre>
+</div>
+</div>
+<div id="14fc7f93" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.384978+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.385550+00:00&quot;,&quot;total&quot;:0.0005724990000004482}}" data-exec_doc="true" data-execution_count="84">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>test_eq(mac_key(<span class="st">'mod+P'</span>), mac_key(<span class="st">'mod+shift+p'</span>))        <span class="co"># an uppercase base carries the shift itself</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>test_eq(mac_key(<span class="st">'hyper+k'</span>), (<span class="st">'k'</span>, CMD <span class="op">|</span> CTRL <span class="op">|</span> ALT <span class="op">|</span> SHIFT))</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>test_eq(mac_key(<span class="st">'mod+k mod+s'</span>), mac_key(<span class="st">'mod+k'</span>))        <span class="co"># a sequence installs its first stroke</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="1f114a0b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.386391+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.388229+00:00&quot;,&quot;total&quot;:0.0018385130000027061}}" data-execution_count="86">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L440" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="menu_chord" class="level3">
+<h3 class="anchored" data-anchor-id="menu_chord">menu_chord</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> menu_chord(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    action, lookup</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The chord to put on a menu row, or None to leave it bare.</em></p>
+<p>A key equivalent is consulted before the keystroke reaches the web view, so anything installed here is taken away from the page. Only a global action with a modifier is safe: a scoped one would fire outside its scope, and a bare letter would fire while you were typing it.</p>
+</section>
+</div>
+<p>A key equivalent is consulted before the keystroke reaches the web view, so every chord installed on a menu row is taken away from the page. <a href="https://vedicreader.github.io/kavacha/window.html#menu_chord"><code>menu_chord</code></a> is the filter that decides which may be taken.</p>
+<p>Three things have to hold. The action is bound, its scope is <code>global</code>, and its first stroke carries a modifier. A scoped action would fire outside its scope. A bare letter would fire while you were typing it.</p>
+<p><code>lookup</code> is the host’s keymap, as a callable from an action to a <a href="menus.html">[<code>Binding</code>](https://vedicreader.github.io/kavacha/menus.html#binding)</a> or <code>None</code>. kavacha ships no keymap of its own, so a plain dict’s <code>get</code> is a lookup and is what the examples here use.</p>
+<div id="c6b4e550" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.388970+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.389908+00:00&quot;,&quot;total&quot;:0.0009393939999995382}}" data-exec_doc="true" data-execution_count="88">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>KEYS <span class="op">=</span> {<span class="st">'save'</span>:         Binding((<span class="st">'mod+s'</span>,), <span class="st">'Save'</span>),</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>        <span class="st">'quick_open'</span>:   Binding((<span class="st">'mod+shift+o'</span>,)),</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">'find_in_file'</span>: Binding((<span class="st">'mod+f'</span>,), <span class="st">'Find'</span>, scope<span class="op">=</span><span class="st">'editor'</span>),</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">'comment'</span>:      Binding((<span class="st">'/'</span>,), <span class="st">'Comment'</span>),</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">'orphan'</span>:       Binding()}</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>{a: menu_chord(a, KEYS.get) <span class="cf">for</span> a <span class="kw">in</span> (<span class="st">'save'</span>, <span class="st">'quick_open'</span>, <span class="st">'find_in_file'</span>, <span class="st">'comment'</span>, <span class="st">'orphan'</span>)}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="88">
+<pre><code>{'save': ('s', 1048576),
+ 'quick_open': ('o', 1179648),
+ 'find_in_file': None,
+ 'comment': None,
+ 'orphan': None}</code></pre>
+</div>
+</div>
+<p><code>save</code> is global, bound and modified, so it earns its chord. The other three are each refused for a different reason, and an action the keymap has never heard of is refused too.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#_title"><code>_title</code></a> prefers the keymap’s label. Without one it opens up the action’s underscores, so a row is never blank and never shows a bare identifier.</p>
+<div id="565e8c83" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.390109+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.390711+00:00&quot;,&quot;total&quot;:0.0006032940000011422}}" data-exec_doc="true" data-execution_count="89">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>_title(MenuItem(<span class="st">'save'</span>), KEYS.get), _title(MenuItem(<span class="st">'quick_open'</span>), KEYS.get)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="89">
+<pre><code>('Save', 'Quick open')</code></pre>
+</div>
+</div>
+<div id="a77e5e86" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.392964+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.395175+00:00&quot;,&quot;total&quot;:0.002211687999995604}}" data-execution_count="91">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L461" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="menu_bar" class="level3">
+<h3 class="anchored" data-anchor-id="menu_bar">menu_bar</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> menu_bar(</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    bar, lookup, on_action, run:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>pywebview menus for <code>bar</code>, plus the table <a href="https://vedicreader.github.io/kavacha/window.html#_decorate"><code>_decorate</code></a> needs to finish them off AppKit-side.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#menu_bar"><code>menu_bar</code></a> walks <code>bar</code>, the host’s menu table, and returns pywebview <code>Menu</code> objects together with the table <a href="https://vedicreader.github.io/kavacha/window.html#_decorate"><code>_decorate</code></a> needs afterwards. That table is keyed by <code>(menu title, row title)</code>, because a title is all AppKit gives back when the bar is rebuilt.</p>
+<p>There are three kinds of row. A <a href="https://vedicreader.github.io/kavacha/menus.html#menuitem"><code>MenuItem</code></a> with no action is a separator. A <a href="https://vedicreader.github.io/kavacha/menus.html#js"><code>Js</code></a> row runs its expression through <a href="https://vedicreader.github.io/kavacha/build.html#run"><code>run</code></a>. Anything else calls <code>on_action</code> with the action name, under the label the keymap gives it.</p>
+<p>A <a href="https://vedicreader.github.io/kavacha/menus.html#std"><code>Std</code></a> row is one AppKit implements itself, so the callback built here does nothing. <a href="https://vedicreader.github.io/kavacha/window.html#_decorate"><code>_decorate</code></a> gives the row a nil target and the real selector once the bar exists.</p>
+<p><code>on_action</code> is where the host says what an action means. kavacha builds no JavaScript: a library that packages somebody else’s app does not know the name of their dispatch function. <a href="https://vedicreader.github.io/kavacha/build.html#run"><code>run</code></a> is separate because a <a href="https://vedicreader.github.io/kavacha/menus.html#js"><code>Js</code></a> row is JavaScript by definition, and defaults to <a href="https://vedicreader.github.io/kavacha/window.html#_menu_run"><code>_menu_run</code></a> against the focused window.</p>
+<div id="d98f2958" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-09-02T08:48:09.397037+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-09-02T08:48:09.398955+00:00&quot;,&quot;total&quot;:0.0019192609999976185}}" data-execution_count="95">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/window.py#L494" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="install_menu_patch" class="level3">
+<h3 class="anchored" data-anchor-id="install_menu_patch">install_menu_patch</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> install_menu_patch(</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    specs, lookup</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Finish each item off as AppKit needs it, wherever pywebview builds the bar.</em></p>
+<p>It rebuilds on every focus change to a window whose menu differs, so anything done once to the bar after start is thrown away. This wraps the one method both rebuild paths go through.</p>
+</section>
+</div>
+<p>pywebview rebuilds the whole menu bar whenever the focused window’s menu differs from the one it built last, so anything done to the bar once, after start, is thrown away at the next focus change. <a href="https://vedicreader.github.io/kavacha/window.html#install_menu_patch"><code>install_menu_patch</code></a> wraps <code>_recreate_menus</code>, the one method both rebuild paths go through, and every rebuilt bar is decorated again.</p>
+<p>It patches once. A second call returns False and changes nothing. So does a call where pywebview’s cocoa backend will not import.</p>
+<p><code>specs</code> is captured by the wrapper, so the table <a href="https://vedicreader.github.io/kavacha/window.html#menu_bar"><code>menu_bar</code></a> returned is the table every later rebuild uses.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#_decorate"><code>_decorate</code></a> finishes the rows AppKit has to finish. A <a href="https://vedicreader.github.io/kavacha/menus.html#std"><code>Std</code></a> row is given a nil target and its selector, which is what walks the responder chain and lets Cut, Copy, Paste and Minimize reach the web view. Every other row is given the chord <a href="https://vedicreader.github.io/kavacha/window.html#menu_chord"><code>menu_chord</code></a> allows it. A row with no entry in <code>specs</code> is left alone.</p>
+<p>The Window menu is handed to <code>NSApp</code> as the windows menu, which is what puts the open windows on it.</p>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#_decorate"><code>_decorate</code></a> runs inside the wrapper <a href="https://vedicreader.github.io/kavacha/window.html#install_menu_patch"><code>install_menu_patch</code></a> installed, and every exception it raises is caught there. A bar that cannot be decorated is a bar without chords, not a failed launch.</p>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/kavacha");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
