@@ -20,6 +20,9 @@ from fastcore.all import Path
 # %% ../nbs/04_window.ipynb #d450e443
 from fastcore.xdg import xdg_config_home
 
+# %% ../nbs/04_window.ipynb #b119a172
+from .menus import Binding, Js, MenuItem, Std
+
 # %% ../nbs/04_window.ipynb #ffbc16b0
 #: Where the webview keeps its own storage. A host with its own config dir passes one.
 APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
@@ -433,36 +436,34 @@ def mac_key(chord):
     if len(base) != 1: return None
     return base, mask
 
-# %% ../nbs/04_window.ipynb #bb7de15d
-def menu_chord(action):
+# %% ../nbs/04_window.ipynb #73585946
+def menu_chord(action, lookup):
     """The chord to put on a menu row, or None to leave it bare.
 
     A key equivalent is consulted before the keystroke reaches the web view, so anything installed
     here is taken away from the page. Only a global action with a modifier is safe: a scoped one
     would fire outside its scope, and a bare letter would fire while you were typing it.
     """
-    from .core.keys import lookup
     k = lookup(action)
     if k is None or not k.bound or k.scope != 'global': return None
     first = k.keys[0]
     if not (set(first.split('+')[:-1]) & {'mod', 'cmd', 'ctrl', 'alt', 'opt', 'hyper'}): return None
     return mac_key(first)
 
-# %% ../nbs/04_window.ipynb #62a25dc4
-def _title(row):
-    from .core.keys import lookup
+# %% ../nbs/04_window.ipynb #a6757b5e
+def _title(row, lookup):
+    "The label for an action row: the keymap's, or the action with its underscores opened up."
     k = lookup(row.action)
     t = (k.label if k and k.label else row.action.replace('_', ' '))
     return t[:1].upper() + t[1:]
 
-# %% ../nbs/04_window.ipynb #5eaed2ca
-def menu_bar(run=None):
-    "pywebview menus for `BAR`, plus the table `_decorate` needs to finish them off AppKit-side."
+# %% ../nbs/04_window.ipynb #923d6167
+def menu_bar(bar, lookup, on_action, run=None):
+    "pywebview menus for `bar`, plus the table `_decorate` needs to finish them off AppKit-side."
     from webview.menu import Menu, MenuAction, MenuSeparator
-    from .blocks.keys.menus import BAR, Js, MenuItem, Std
     run = run or _menu_run
     menus, specs = [], {}
-    for title, rows in BAR:
+    for title, rows in bar:
         items = []
         for row in rows:
             if isinstance(row, MenuItem) and not row.action: items.append(MenuSeparator()); continue
@@ -472,9 +473,9 @@ def menu_bar(run=None):
             elif isinstance(row, Js):
                 items.append(MenuAction(row.title, (lambda e: lambda: run(e))(row.expr)))
             else:
-                name = _title(row)
+                name = _title(row, lookup)
                 specs[(title, name)] = row
-                items.append(MenuAction(name, (lambda a: lambda: run(f'leeAct("{a}")'))(row.action)))
+                items.append(MenuAction(name, (lambda a: lambda: on_action(a))(row.action)))
         menus.append(Menu(title, items))
     return menus, specs
 
@@ -489,8 +490,8 @@ def _menu_run(js):
 # %% ../nbs/04_window.ipynb #9dcda4ff
 _menu_patched = False
 
-# %% ../nbs/04_window.ipynb #8d8c9664
-def install_menu_patch(specs):
+# %% ../nbs/04_window.ipynb #a505d335
+def install_menu_patch(specs, lookup):
     """Finish each item off as AppKit needs it, wherever pywebview builds the bar.
 
     It rebuilds on every focus change to a window whose menu differs, so anything done once to the
@@ -506,18 +507,17 @@ def install_menu_patch(specs):
     original = BrowserView._recreate_menus
     def recreate(self, user_menu):
         main = original(self, user_menu)
-        try: _decorate(main, specs)
+        try: _decorate(main, specs, lookup)
         except Exception as e: print(f'  menu bar: {errstr(e)}')
         return main
     BrowserView._recreate_menus = recreate
     _menu_patched = True
     return True
 
-# %% ../nbs/04_window.ipynb #9427108f
-def _decorate(main, specs):
+# %% ../nbs/04_window.ipynb #e6ab65e8
+def _decorate(main, specs, lookup):
     "Chords onto the rows that may have one, and the responder chain onto the rows AppKit owns."
     import AppKit
-    from .blocks.keys.menus import Std
     for i in range(main.numberOfItems()):
         sub = main.itemAtIndex_(i).submenu()
         if sub is None: continue
@@ -530,6 +530,6 @@ def _decorate(main, specs):
                 item.setTarget_(None)          # nil target is what walks the responder chain
                 item.setAction_(spec.selector)
                 got = mac_key(f'{spec.mods}+{spec.key}') if spec.key else None
-            else: got = menu_chord(spec.action)
+            else: got = menu_chord(spec.action, lookup)
             if got: item.setKeyEquivalent_(got[0]); item.setKeyEquivalentModifierMask_(got[1])
         if title == 'Window': AppKit.NSApp().setWindowsMenu_(sub)
