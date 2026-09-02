@@ -134,8 +134,8 @@ def warm_cdp(port=9223, profile=None):
 
 # %% ../nbs/04_window.ipynb #39d21b92
 def window_size(spec=None):
-    "`WIDTHxHEIGHT` from `spec` or `$KAVACHA_WINDOW_SIZE`, else the default."
-    spec = spec or os.environ.get('KAVACHA_WINDOW_SIZE', '')
+    "`WIDTHxHEIGHT` from `spec` or `$<prefix>WINDOW_SIZE`, else the default. See `use_app`."
+    spec = spec or os.environ.get(f'{ENV_PREFIX}WINDOW_SIZE', '')
     try:
         w, h = (int(n) for n in str(spec).lower().split('x', 1))
         if w >= MIN_SIZE[0] and h >= MIN_SIZE[1]: return w, h
@@ -201,7 +201,7 @@ def _disabled(title):
     return item
 
 # %% ../nbs/04_window.ipynb #928bfb4b
-_hidden, _on_folder, _delegates = [], None, None
+_hidden, _on_folder, _delegates, _on_recent = [], None, None, None
 
 # %% ../nbs/04_window.ipynb #4903e49d
 def _dock_delegates():
@@ -221,7 +221,7 @@ def _dock_delegates():
             if not visible and _hidden: _hidden.pop().makeKeyAndOrderFront_(None)
             return YES
         def applicationDockMenu_(self, app):
-            try: return dock_menu(_on_folder)
+            try: return dock_menu(_on_folder, _on_recent() if _on_recent else None)
             except Exception as e: print(f'  dock menu: {errstr(e)}'); return None
     _delegates = (Windows, App)
     return _delegates
@@ -252,16 +252,16 @@ def quiet_text_substitution():
         return False
 
 # %% ../nbs/04_window.ipynb #3858b880
-def keep_running_in_dock(on_folder=None):
+def keep_running_in_dock(on_folder=None, recent=None):
     "Hide the last window rather than quit, and fill the Dock menu. Reopen shows one window. Cmd+Q quits."
-    global _on_folder
+    global _on_folder, _on_recent
     try:
         from webview.platforms.cocoa import BrowserView
-        _on_folder = on_folder
+        _on_folder, _on_recent = on_folder, recent
         BrowserView.WindowDelegate, BrowserView.AppDelegate = _dock_delegates()
         return True
     except Exception as e:
-        print(f'  the last window will quit the app: {errstr(e)}')
+        print(f'  the last window will quit {APP_NAME}: {errstr(e)}')
         return False
 
 # %% ../nbs/04_window.ipynb #5e8d9ba6
@@ -320,7 +320,7 @@ def _point(window, url, url_wait=90):
 
 # %% ../nbs/04_window.ipynb #022366f0
 def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_ready=None,
-              on_open_folder=None, keys=()):
+              on_open_folder=None, keys=(), bar=(), lookup=None, on_action=None, on_recent=None):
     "One native window per workspace URL, until they all close. Blocks, on the main thread."
     ok, why = shell_ready()
     if not ok: raise RuntimeError(why)
@@ -334,7 +334,7 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
     shell_api().on_open_folder = open_folder
     if sys.platform == 'darwin':
         quiet_text_substitution()                                   # before a web view can ask
-        keep_running_in_dock(open_folder)                           # before any window takes a delegate
+        keep_running_in_dock(open_folder, on_recent)                # before any window takes a delegate
     windows = [make_window(t, size) for t in titles]
     for key, window in zip(keys, windows):
         if key: _windows[key] = window
@@ -347,20 +347,20 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
         except Exception as e: print(f'  desktop shell: {errstr(e)}')
     # One list, shared: pywebview rebuilds the bar whenever the focused window's menu is not the
     # one it built last, and a window opened for a folder later has no menu of its own.
-    bar = menus()
-    webview.start(load, gui=gui or why, debug=bool(os.environ.get('KAVACHA_WEBVIEW_DEBUG')),
-                  private_mode=False, storage_path=str(STORAGE), icon=icon, menu=bar)
+    built = menus(bar, lookup, on_action) if bar else []
+    webview.start(load, gui=gui or why, debug=bool(os.environ.get(f'{ENV_PREFIX}WEBVIEW_DEBUG')),
+                  private_mode=False, storage_path=str(STORAGE), icon=icon, menu=built)
 
 # %% ../nbs/04_window.ipynb #e20b82a4
-def menus():
-    "The menu bar, or an empty bar off macOS. Its own function so a test can build one."
+def menus(bar, lookup, on_action, run=None):
+    "The menu bar for `bar`, or an empty one off macOS. Its own function so a test can build one."
     if sys.platform != 'darwin': return []
     try:
         import webview
         webview.settings['SHOW_DEFAULT_MENUS'] = False   # ours are in the order macOS expects
-        bar, specs = menu_bar()
-        install_menu_patch(specs)
-        return bar
+        built, specs = menu_bar(bar, lookup, on_action, run)
+        install_menu_patch(specs, lookup)
+        return built
     except Exception as e:
         print(f'  no menu bar: {errstr(e)}')
         return []
