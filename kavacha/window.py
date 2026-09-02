@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 # %% auto #0
-__all__ = ['APP_NAME', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'LOADING', 'DOCK_RECENT',
-           'NO_SUBSTITUTION', 'WINDOW_KW', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'errstr', 'ShellApi', 'backend',
-           'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'dock_menu',
-           'quiet_text_substitution', 'keep_running_in_dock', 'shell_api', 'make_window', 'off_main_thread',
-           'open_window', 'run_shell', 'menus', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar',
-           'install_menu_patch']
+__all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
+           'DOCK_RECENT', 'NO_SUBSTITUTION', 'WINDOW_KW', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app', 'errstr',
+           'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'splash',
+           'dock_menu', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api', 'make_window',
+           'off_main_thread', 'open_window', 'run_shell', 'menus', 'watch_open_events', 'mac_key', 'menu_chord',
+           'menu_bar', 'eval_js', 'install_menu_patch']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, sys, threading, time
@@ -24,8 +24,19 @@ from fastcore.xdg import xdg_config_home
 from .menus import Binding, Js, MenuItem, Std
 
 # %% ../nbs/04_window.ipynb #ffbc16b0
-#: Where the webview keeps its own storage. A host with its own config dir passes one.
+#: The host application kavacha is wearing: its name, its config directory and the prefix on the
+#: environment variables it reads. `use_app` sets all three, and everything reads them when it runs
+#: rather than at import, because a host calls `use_app` after importing this module.
 APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
+ENV_PREFIX = 'KAVACHA_'
+
+def use_app(name, cfg=None, env_prefix='KAVACHA_'):
+    "Wear `name`: its config directory, its storage and its environment prefix."
+    global APP_NAME, CFG, STORAGE, ENV_PREFIX, EAGER_CDP
+    APP_NAME, ENV_PREFIX = str(name or 'app'), str(env_prefix or '')
+    CFG = Path(cfg) if cfg else Path(os.environ.get(f'{ENV_PREFIX}CFG') or xdg_config_home()/APP_NAME)
+    STORAGE, EAGER_CDP = CFG/'webview', f'{ENV_PREFIX}CDP_EAGER'
+    return APP_NAME
 
 # %% ../nbs/04_window.ipynb #ed752fec
 CFG = Path(os.environ.get('KAVACHA_CFG') or xdg_config_home()/APP_NAME)
@@ -46,7 +57,7 @@ MIN_SIZE = (900, 560)
 STORAGE = CFG/'webview'
 
 # %% ../nbs/04_window.ipynb #9ef17b53
-EAGER_CDP = 'KAVACHA_CDP_EAGER'
+EAGER_CDP = 'KAVACHA_CDP_EAGER'   #: `use_app` re-spells this
 
 # %% ../nbs/04_window.ipynb #747b2cb6
 class ShellApi:
@@ -132,19 +143,22 @@ def window_size(spec=None):
     return DEFAULT_SIZE
 
 # %% ../nbs/04_window.ipynb #97a7c39c
-LOADING = """<!doctype html><meta charset=utf-8><title>leela</title>
-<style>html,body{height:100%;margin:0;background:#171b20;color:#f4f7f9;
+SPLASH = """<!doctype html><meta charset=utf-8><title>{name}</title>
+<style>html,body{{height:100%;margin:0;background:#171b20;color:#f4f7f9;
 font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-display:flex;align-items:center;justify-content:center}
-div{text-align:center;opacity:.85}b{display:block;font-size:34px;letter-spacing:-.02em;margin-bottom:10px}
-i{font-style:normal;font-size:13px;opacity:.6}</style>
-<div><b>leela</b><i>starting the workspace…</i></div>"""
+display:flex;align-items:center;justify-content:center}}
+div{{text-align:center;opacity:.85}}b{{display:block;font-size:34px;letter-spacing:-.02em;margin-bottom:10px}}
+i{{font-style:normal;font-size:13px;opacity:.6}}</style>
+<div><b>{name}</b><i style="{style}">{note}</i></div>"""
+
+def splash(name=None, note='starting the workspace…', style=''):
+    "The holding page a window shows before its URL answers, wearing the host's name."
+    return SPLASH.format(name=name or APP_NAME, note=note, style=style)
 
 # %% ../nbs/04_window.ipynb #ede581c5
 def _unreachable(url):
     "The same splash, saying why nothing arrived."
-    return (LOADING.replace('starting the workspace…', f'the workspace at {url} did not answer')
-                   .replace('<i>', '<i style="color:#e06c75">'))
+    return splash(note=f'the workspace at {url} did not answer', style='color:#e06c75')
 
 # %% ../nbs/04_window.ipynb #c9ba99ed
 DOCK_RECENT = 8          #: rows on the Dock menu, which is a shortcut and not a file browser
@@ -271,12 +285,12 @@ def shell_api():
     return _api
 
 # %% ../nbs/04_window.ipynb #b52f1957
-def make_window(title=APP_NAME, size=None):
+def make_window(title=None, size=None):
     "A window on the splash, waiting for a URL."
     import webview
     w, h = size or window_size()
     STORAGE.mkdir(parents=True, exist_ok=True)
-    return webview.create_window(title or APP_NAME, html=LOADING, width=w, height=h,
+    return webview.create_window(title or APP_NAME, html=splash(title or APP_NAME), width=w, height=h,
                                  js_api=shell_api(), **WINDOW_KW)
 
 # %% ../nbs/04_window.ipynb #48f7ad1a
@@ -286,8 +300,9 @@ def off_main_thread(fn, name='kavacha-shell'):
     return go
 
 # %% ../nbs/04_window.ipynb #926fb8b5
-def open_window(url, title=APP_NAME, key=None, url_wait=90):
+def open_window(url, title=None, key=None, url_wait=90):
     "A window on `url`, raised rather than opened twice when `key` already has one."
+    title = title or APP_NAME
     if key and (window := _windows.get(key)) is not None:
         try: window.show()      # cocoa's `show` is a `callAfter`, so any thread may ask
         except Exception as e: print(f'  could not raise the window for {title}: {errstr(e)}')
@@ -480,12 +495,16 @@ def menu_bar(bar, lookup, on_action, run=None):
     return menus, specs
 
 # %% ../nbs/04_window.ipynb #6b12e1dd
-def _menu_run(js):
-    "Run one expression in the window that has focus. pywebview already calls this off the main thread."
+def eval_js(js):
+    "Run one expression in the window that has focus, and return what it evaluated to."
     import webview
-    if (window := webview.active_window()) is None: return
-    try: window.evaluate_js(js)
-    except Exception as e: print(f'  menu: {errstr(e)}')
+    if (window := webview.active_window()) is None: return None
+    try: return window.evaluate_js(js)
+    except Exception as e:
+        print(f'  menu: {errstr(e)}')
+        return None
+
+_menu_run = eval_js   #: the name the menu bar called it by
 
 # %% ../nbs/04_window.ipynb #9dcda4ff
 _menu_patched = False
