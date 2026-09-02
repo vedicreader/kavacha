@@ -8,7 +8,7 @@ __all__ = ['APP_NAME', 'CFG', 'ENV_PREFIX', 'DEFAULT_SIZE', 'MIN_SIZE', 'EAGER',
            'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app', 'env', 'errstr', 'storage', 'ShellApi', 'wait_for_http',
            'start_cdp', 'warm_cdp', 'window_size', 'splash', 'dock_menu', 'quiet_text_substitution',
            'keep_running_in_dock', 'shell_api', 'make_window', 'off_main_thread', 'open_window', 'run_shell', 'menus',
-           'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'install_menu_patch']
+           'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, sys, threading, time
@@ -468,7 +468,7 @@ def _title(row, lookup):
 def menu_bar(bar, lookup, on_action, run=None):
     "pywebview menus for `bar`, plus the table `_decorate` needs to finish them off AppKit-side."
     from webview.menu import Menu, MenuAction, MenuSeparator
-    run = run or _menu_run
+    run = run or eval_js
     menus, specs = [], {}
     for title, rows in bar:
         items = []
@@ -487,7 +487,7 @@ def menu_bar(bar, lookup, on_action, run=None):
     return menus, specs
 
 # %% ../nbs/04_window.ipynb #6b12e1dd
-def _menu_run(js):
+def eval_js(js):
     "Run one expression in the window that has focus. pywebview already calls this off the main thread."
     import webview
     if (window := webview.active_window()) is None: return
