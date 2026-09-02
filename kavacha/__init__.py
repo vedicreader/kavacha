@@ -1,4 +1,4 @@
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 # The names a caller reaches for. `spec`, `build`, `bundle` and `probe` need nothing but fastcore,
 # so describing an app and asking what a build would do works on a machine that cannot build one.
