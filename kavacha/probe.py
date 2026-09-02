@@ -49,7 +49,7 @@ def py_version(python):
     try: out = subprocess.run([str(python), '-c', 'import sys;print(*sys.version_info[:2])'],
                               capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.SubprocessError): return None
-    try: return tuple(int(n) for n in out.stdout.split())
+    try: return tuple(int(n) for n in out.stdout.split()) or None
     except ValueError: return None
 
 def is_framework(python=None):
