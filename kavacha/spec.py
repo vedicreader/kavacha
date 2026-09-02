@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from fastcore.all import Path, globtastic, groupby
 
 # %% auto #0
-__all__ = ['DEFAULT_EXCLUDES', 'GUI_MODULE', 'tree', 'mypyc_modules', 'App', 'doc_types']
+__all__ = ['DEFAULT_EXCLUDES', 'GUI_MODULE', 'GUI_SUPPORT', 'tree', 'mypyc_modules', 'App', 'doc_types']
 
 # %% ../nbs/01_spec.ipynb #8c0e2b9c
 def tree(src, dest, skip=()):
@@ -30,13 +30,21 @@ def mypyc_modules(site=None):
             sorted(f.name.split('.')[0] for f in site.glob('*__mypyc*.pyd')))
 
 # %% ../nbs/01_spec.ipynb #ddd2b866
-#: Build tooling and other platforms' webview backends: about 100MB a frozen app never wanted.
+#: Build tooling and the GUI toolkits no platform's webview uses: about 100MB a frozen app never
+#: wanted. Nothing here belongs to one platform; `GUI_MODULE` and `GUI_SUPPORT` hold those.
 DEFAULT_EXCLUDES = ('tkinter', 'test', 'setuptools', 'wheel', 'py2app', 'py2exe',
-                    'gi', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'clr', 'matplotlib')
+                    'PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'matplotlib')
 
 #: The webview backends each platform does want, so the others can be excluded.
 GUI_MODULE = {'darwin': 'webview.platforms.cocoa', 'win32': 'webview.platforms.winforms',
               'linux': 'webview.platforms.gtk'}
+
+#: What each backend imports besides itself. Excluding one platform's set on another is safe;
+#: excluding it on its own platform takes the window with it, which is what `clr` in
+#: `DEFAULT_EXCLUDES` did to every py2exe build: pythonnet provides it, and `winforms` needs it.
+GUI_SUPPORT = {'darwin': ('objc', 'Foundation', 'AppKit', 'WebKit', 'Quartz'),
+               'win32': ('clr', 'clr_loader', 'pythonnet'),
+               'linux': ('gi',)}
 
 # %% ../nbs/01_spec.ipynb #c4206b96
 @dataclass
@@ -95,7 +103,9 @@ class App:
 
     def excluded(self, platform=None):
         "Everything this build leaves out, including the webview backends it is not using."
-        others = [m for p, m in GUI_MODULE.items() if p != (platform or sys.platform)]
+        mine = platform or sys.platform
+        others = [GUI_MODULE[p] for p in GUI_MODULE if p != mine]
+        others += [m for p, ms in GUI_SUPPORT.items() if p != mine for m in ms]
         return sorted({*DEFAULT_EXCLUDES, *others, *self.excludes})
 
     def py2app_options(self):
