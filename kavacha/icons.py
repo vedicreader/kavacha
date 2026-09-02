@@ -2,7 +2,7 @@
 
 # %% ../nbs/05_icons.ipynb #1752ff04
 from __future__ import annotations
-import struct, subprocess, zlib
+import subprocess
 from fastcore.all import Path
 
 # %% auto #0
