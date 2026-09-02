@@ -24,9 +24,7 @@ from fastcore.xdg import xdg_config_home
 from .menus import Binding, Js, MenuItem, Std
 
 # %% ../nbs/04_window.ipynb #ffbc16b0
-#: The host application kavacha is wearing: its name, its config directory and the prefix on the
-#: environment variables it reads. `use_app` sets all three, and everything reads them when it runs
-#: rather than at import, because a host calls `use_app` after importing this module.
+#: The host kavacha is wearing: `use_app` sets its name, config directory and environment prefix.
 APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
 ENV_PREFIX = 'KAVACHA_'
 
@@ -504,7 +502,7 @@ def eval_js(js):
         print(f'  menu: {errstr(e)}')
         return None
 
-_menu_run = eval_js   #: the name the menu bar called it by
+_menu_run = eval_js
 
 # %% ../nbs/04_window.ipynb #9dcda4ff
 _menu_patched = False
