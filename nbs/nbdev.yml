@@ -4,7 +4,7 @@ project:
 website:
   title: "kavacha"
   site-url: "https://vedicreader.github.io/kavacha"
-  description: "the casing: run a local web app in a native window, and package it as a Mac or Windows application"
+  description: "run and package web apps as native desktop applications"
   repo-branch: main
   repo-url: "https://github.com/vedicreader/kavacha"
 

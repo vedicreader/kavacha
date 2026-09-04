@@ -10,13 +10,8 @@ __all__ = ['BACKENDS', 'FRAMEWORK_CANDIDATES', 'backend', 'shell_ready', 'py_ver
            'wait_for_http', 'running_from']
 
 # %% ../nbs/00_probe.ipynb #64edb644
-#: pywebview's GUI name per platform. A platform absent from here has no native window.
 BACKENDS = {'darwin': 'cocoa', 'win32': 'edgechromium', 'linux': 'gtk'}
 
-#: Framework builds macOS py2app can embed, best first. Not newest first: this is the version the
-#: app ships, so the order is what projects are most likely to be on. uv's and pyenv's are absent
-#: on purpose — both are python-build-standalone, `PYTHONFRAMEWORK` is empty, and py2app cannot
-#: embed one in a bundle.
 FRAMEWORK_CANDIDATES = (
     '/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13',
     '/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14',
@@ -55,7 +50,6 @@ def py_version(python):
 def is_framework(python=None):
     "Whether `python` (default: this interpreter) is a macOS framework build py2app can use."
     if python is None: return bool(sysconfig.get_config_var('PYTHONFRAMEWORK'))
-    # JSON, not two words: `PYTHONFRAMEWORK` is empty off macOS, and splitting eats the version.
     probe = ('import json,sysconfig,sys;'
              "print(json.dumps([sysconfig.get_config_var('PYTHONFRAMEWORK') or '', "
              'list(sys.version_info[:2])]))')
@@ -84,13 +78,7 @@ def wait_for_http(url, timeout=60, interval=.1):
 
 # %% ../nbs/00_probe.ipynb #d18e585d
 def running_from(bundle, ps_output=None):
-    """The pids of processes running out of `bundle`, so a build does not overwrite a live app.
-
-    py2app writes the bundle in place, and `python313.zip` is the running app's standard library.
-    Replacing it under a live process leaves every import it has not made yet reading a file that
-    is no longer the one it opened: `ZipImportError: bad local file header`, raised by whatever
-    happens to import next and naming nothing that would lead anyone back to a rebuild.
-    """
+    "PIDs of processes whose executable is inside `bundle`."
     target = str(Path(bundle).resolve())
     if ps_output is None:
         try: ps_output = subprocess.run(['ps', '-Ao', 'pid,command'], capture_output=True,
@@ -99,8 +87,6 @@ def running_from(bundle, ps_output=None):
     pids = []
     for line in ps_output.splitlines()[1:]:
         pid, _, command = line.strip().partition(' ')
-        # The executable, not the whole command line: this very check names the bundle in its own
-        # arguments, and so does every grep, editor and shell that has the path in it.
         exe = command.split(' ', 1)[0]
         if exe.startswith(target + os.sep) and pid.isdigit() and int(pid) != os.getpid():
             pids.append(int(pid))

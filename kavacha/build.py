@@ -13,9 +13,7 @@ __all__ = ['STAMP', 'REEXEC', 'run', 'lock_requirements', 'build_venv', 'git_sta
            'check', 'build']
 
 # %% ../nbs/03_build.ipynb #7b260a31
-#: Written into the bundle at build; read back to tell a stale install from a current one.
 STAMP = 'build.json'
-#: The marker that says a build already re-execed, so a bad environment reports rather than forks.
 REEXEC = 'KAVACHA_BUILD_VENV'
 
 def run(*args, **kw):
@@ -24,12 +22,7 @@ def run(*args, **kw):
 
 # %% ../nbs/03_build.ipynb #98cf7446
 def lock_requirements(root, extras=(), out=None):
-    """`uv.lock` as a pinned requirements file, or None where uv cannot answer.
-
-    pip resolves `>=` against whatever it finds and keeps whatever it already has, so a build
-    environment goes on shipping the versions it was first made with while the repository moves.
-    The lock is the tested set, and the bundle should carry that one.
-    """
+    "Export `uv.lock` as pinned requirements, or return `None`."
     root = Path(root)
     if not (root/'uv.lock').exists(): return None
     args = ['uv', 'export', '--frozen', '--no-dev', '--no-hashes', '--no-emit-project',
@@ -47,12 +40,10 @@ def lock_requirements(root, extras=(), out=None):
 
 # %% ../nbs/03_build.ipynb #0431c2e0
 def build_venv(python, venv, root, extras=(), force=False):
-    "A build environment on `python`: a plain `venv`, since `uv venv` links what we are avoiding."
+    "A plain build venv using `python`."
     venv = Path(venv)
     if force: shutil.rmtree(venv, ignore_errors=True)
     exe = venv/'bin'/'python'
-    # A build environment left over from another interpreter is not reusable, and reusing one in
-    # silence is how an app goes on shipping an old version while the build prints the new one.
     if exe.exists() and py_version(exe) != py_version(python):
         print(f'· rebuilding {venv.name}: it is on {py_version(exe)}, this build wants {py_version(python)}')
         shutil.rmtree(venv, ignore_errors=True)
@@ -85,11 +76,7 @@ def stamp_path(bundle):
     return (b/'Contents'/'Resources'/STAMP) if b.suffix == '.app' else (b/STAMP)
 
 def write_stamp(bundle, root, version=''):
-    """Record which commit the bundle was built from.
-
-    A bundle is derived from the tree and nothing else compares them, so an app built before a fix
-    installs over one built after it and reports the version it always did.
-    """
+    "Write and return the bundle's source stamp."
     if (st := git_stamp(root, version)) is None:
         st = {'commit': '', 'dirty': False, 'version': version,
               'built': time.strftime('%Y-%m-%dT%H:%M:%S')}
@@ -126,11 +113,7 @@ def check(spec, root, venv=None):
 # %% ../nbs/03_build.ipynb #6215af9c
 def build(spec, root, setup_py, venv=None, alias=False, force=False, rebuild_venv=False,
           identity=None):
-    """Build `spec` into `root/dist`, re-execing into a framework Python where macOS needs one.
-
-    `setup_py` is the file that calls `setuptools.setup` with the freezer options; it runs in the
-    build environment rather than this one, which is the whole reason for the re-exec.
-    """
+    "Build `spec` into `root/dist`, using framework Python on macOS."
     root, venv = Path(root), Path(venv or Path(root)/'packaging'/'.app-venv')
     out = spec.out(root)
     if not force and (live := running_from(out)):

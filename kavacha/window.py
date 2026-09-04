@@ -24,7 +24,6 @@ from fastcore.xdg import xdg_config_home
 from .menus import Binding, Js, MenuItem, Std
 
 # %% ../nbs/04_window.ipynb #ffbc16b0
-#: The host kavacha is wearing: `use_app` sets its name, config directory and environment prefix.
 APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
 ENV_PREFIX = 'KAVACHA_'
 
@@ -55,12 +54,11 @@ MIN_SIZE = (900, 560)
 STORAGE = CFG/'webview'
 
 # %% ../nbs/04_window.ipynb #9ef17b53
-EAGER_CDP = 'KAVACHA_CDP_EAGER'   #: `use_app` re-spells this
+EAGER_CDP = 'KAVACHA_CDP_EAGER'
 
 # %% ../nbs/04_window.ipynb #747b2cb6
 class ShellApi:
     "What the page may ask the native window for, as `window.pywebview.api.*`."
-    #: Set by `run_shell`. Takes a folder and gives it a window of its own.
     on_open_folder = None
     def open_folder(self, path):
         "Open a folder in a window of its own. pywebview runs every `js_api` call on its own thread."
@@ -76,7 +74,6 @@ class ShellApi:
             print(f'  folder dialog: {errstr(e)}')
             return None
         return str(picked[0]) if picked else None
-    #: Set by `run_shell`. Gives the page the recent-folder list before the server is up.
     on_recent = None
     def recent(self):
         "Whatever the host offers as recent folders, or nothing."
@@ -98,14 +95,14 @@ def shell_ready(platform=None):
 
 # %% ../nbs/04_window.ipynb #5ce28d0d
 def wait_for_http(url, timeout=60, interval=.1):
-    "Block until `url` answers, or `timeout` passes. True if the server came up."
+    "Wait for `url` until `timeout`; return whether it answered."
     import urllib.request
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
             urllib.request.urlopen(url, timeout=.5).close()
             return True
-        except urllib.error.HTTPError: return True   # a 4xx proves the port is live
+        except urllib.error.HTTPError: return True
         except Exception: time.sleep(interval)
     return False
 
@@ -159,7 +156,7 @@ def _unreachable(url):
     return splash(note=f'the workspace at {url} did not answer', style='color:#e06c75')
 
 # %% ../nbs/04_window.ipynb #c9ba99ed
-DOCK_RECENT = 8          #: rows on the Dock menu, which is a shortcut and not a file browser
+DOCK_RECENT = 8
 
 # %% ../nbs/04_window.ipynb #3a4723da
 _dock_target = None
@@ -225,12 +222,6 @@ def _dock_delegates():
     return _delegates
 
 # %% ../nbs/04_window.ipynb #b48c51bb
-#: What macOS rewrites as you type, and must not while you are typing code. WKWebView hands a
-#: `contenteditable` to NSSpellChecker; a browser does not, which is why the packaged app turned
-#: quotes into curly quotes and moved the caret out from under CodeMirror, and the served one
-#: never did. Inline prediction is in the list because Tab is what accepts one, so the Tab that was
-#: meant for the completion list went to the system instead and left the caret at the start of the
-#: line. Written to this app's own defaults domain, so nothing outside it changes.
 NO_SUBSTITUTION = ('NSAutomaticQuoteSubstitutionEnabled', 'NSAutomaticDashSubstitutionEnabled',
                    'NSAutomaticTextReplacementEnabled', 'NSAutomaticSpellingCorrectionEnabled',
                    'NSAutomaticPeriodSubstitutionEnabled', 'NSAutomaticCapitalizationEnabled',
@@ -263,8 +254,6 @@ def keep_running_in_dock(on_folder=None, recent=None):
         return False
 
 # %% ../nbs/04_window.ipynb #5e8d9ba6
-#: Everything but the title and the size, so a window opened at launch and one opened an hour
-#: later are the same window.
 WINDOW_KW = dict(min_size=MIN_SIZE, background_color='#171b20', text_select=True, zoomable=True,
                  easy_drag=False)
 
@@ -272,7 +261,6 @@ WINDOW_KW = dict(min_size=MIN_SIZE, background_color='#171b20', text_select=True
 _api = None
 
 # %% ../nbs/04_window.ipynb #62865c1c
-#: Which window is showing which workspace, so a folder already open is raised, not opened twice.
 _windows = {}
 
 # %% ../nbs/04_window.ipynb #4553e889
@@ -302,7 +290,7 @@ def open_window(url, title=None, key=None, url_wait=90):
     "A window on `url`, raised rather than opened twice when `key` already has one."
     title = title or APP_NAME
     if key and (window := _windows.get(key)) is not None:
-        try: window.show()      # cocoa's `show` is a `callAfter`, so any thread may ask
+        try: window.show()
         except Exception as e: print(f'  could not raise the window for {title}: {errstr(e)}')
         return window
     window = make_window(title)
@@ -319,7 +307,7 @@ def _point(window, url, url_wait=90):
 # %% ../nbs/04_window.ipynb #022366f0
 def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_ready=None,
               on_open_folder=None, keys=(), bar=(), lookup=None, on_action=None, on_recent=None):
-    "One native window per workspace URL, until they all close. Blocks, on the main thread."
+    "Open one native window per workspace URL and block until they close."
     ok, why = shell_ready()
     if not ok: raise RuntimeError(why)
     import webview
@@ -327,12 +315,11 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
     if not urls: raise ValueError('the desktop shell needs at least one workspace URL')
     titles = list(titles) + [''] * (len(urls) - len(titles))
     keys = list(keys) + [None] * (len(urls) - len(keys))
-    # Every native caller reaches this on the main thread, and none of them may build a window there.
     open_folder = off_main_thread(on_open_folder, 'kavacha-open-folder') if on_open_folder else None
     shell_api().on_open_folder = open_folder
     if sys.platform == 'darwin':
-        quiet_text_substitution()                                   # before a web view can ask
-        keep_running_in_dock(open_folder, on_recent)                # before any window takes a delegate
+        quiet_text_substitution()
+        keep_running_in_dock(open_folder, on_recent)
     windows = [make_window(t, size) for t in titles]
     for key, window in zip(keys, windows):
         if key: _windows[key] = window
@@ -343,19 +330,17 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
         if on_ready is None: return
         try: on_ready()
         except Exception as e: print(f'  desktop shell: {errstr(e)}')
-    # One list, shared: pywebview rebuilds the bar whenever the focused window's menu is not the
-    # one it built last, and a window opened for a folder later has no menu of its own.
     built = menus(bar, lookup, on_action) if bar else []
     webview.start(load, gui=gui or why, debug=bool(os.environ.get(f'{ENV_PREFIX}WEBVIEW_DEBUG')),
                   private_mode=False, storage_path=str(STORAGE), icon=icon, menu=built)
 
 # %% ../nbs/04_window.ipynb #e20b82a4
 def menus(bar, lookup, on_action, run=None):
-    "The menu bar for `bar`, or an empty one off macOS. Its own function so a test can build one."
+    "Build the macOS menu bar, or return an empty list."
     if sys.platform != 'darwin': return []
     try:
         import webview
-        webview.settings['SHOW_DEFAULT_MENUS'] = False   # ours are in the order macOS expects
+        webview.settings['SHOW_DEFAULT_MENUS'] = False
         built, specs = menu_bar(bar, lookup, on_action, run)
         install_menu_patch(specs, lookup)
         return built
@@ -394,7 +379,7 @@ try:                                     # pragma: no cover - macOS only
     import objc
     from Foundation import NSObject
     class _RecentTarget(NSObject):
-        "What a Dock menu row fires at. `objc.super`, as `_OpenHandler` needs for the same reason."
+        "A target for a Dock menu row."
         def init_with(self, fn):
             self = objc.super(_RecentTarget, self).init()
             if self is None: return None
@@ -407,8 +392,6 @@ try:                                     # pragma: no cover - macOS only
     class _OpenHandler(NSObject):
         "An Apple Event handler must be a selector on an Objective-C object."
         def init_with(self, fn):
-            # `objc.super`, not `super()`: the builtin has no `init` to find on an ObjC class, so
-            # registration raised and nothing opened a folder dropped on the Dock or picked in Finder.
             self = objc.super(_OpenHandler, self).init()
             if self is None: return None
             self._fn = fn
@@ -418,8 +401,6 @@ except Exception:                        # pragma: no cover - everywhere else
     _OpenHandler = _RecentTarget = None
 
 
-# The Mac menu bar. pywebview builds it; what is added here is the ordering, the chords it has no
-# support for, and the rows AppKit implements itself. See `docs/desktop.md`.
 
 # %% ../nbs/04_window.ipynb #2abce1db
 CMD, CTRL, ALT, SHIFT = 1 << 20, 1 << 18, 1 << 19, 1 << 17
@@ -429,7 +410,6 @@ _MODS = {'mod': CMD, 'cmd': CMD, 'ctrl': CTRL, 'alt': ALT, 'opt': ALT, 'shift': 
          'hyper': CMD | CTRL | ALT | SHIFT}
 
 # %% ../nbs/04_window.ipynb #fc6e894d
-#: AppKit spells these as private-use unichars, not as their names.
 _NAMED = {'up': '', 'down': '', 'left': '', 'right': '',
           'pageup': '', 'pagedown': '', 'home': '', 'end': '',
           'delete': '', 'enter': '\r', 'return': '\r', 'tab': '\t', 'space': ' ',
@@ -451,12 +431,7 @@ def mac_key(chord):
 
 # %% ../nbs/04_window.ipynb #73585946
 def menu_chord(action, lookup):
-    """The chord to put on a menu row, or None to leave it bare.
-
-    A key equivalent is consulted before the keystroke reaches the web view, so anything installed
-    here is taken away from the page. Only a global action with a modifier is safe: a scoped one
-    would fire outside its scope, and a bare letter would fire while you were typing it.
-    """
+    "Return a global menu chord that may pre-empt the web view."
     k = lookup(action)
     if k is None or not k.bound or k.scope != 'global': return None
     first = k.keys[0]
@@ -509,11 +484,7 @@ _menu_patched = False
 
 # %% ../nbs/04_window.ipynb #a505d335
 def install_menu_patch(specs, lookup):
-    """Finish each item off as AppKit needs it, wherever pywebview builds the bar.
-
-    It rebuilds on every focus change to a window whose menu differs, so anything done once to the
-    bar after start is thrown away. This wraps the one method both rebuild paths go through.
-    """
+    "Reapply AppKit decoration whenever pywebview rebuilds the menu."
     global _menu_patched
     if _menu_patched: return False
     try:
@@ -544,7 +515,7 @@ def _decorate(main, specs, lookup):
             spec = specs.get((title, str(item.title())))
             if spec is None: continue
             if isinstance(spec, Std):
-                item.setTarget_(None)          # nil target is what walks the responder chain
+                item.setTarget_(None)
                 item.setAction_(spec.selector)
                 got = mac_key(f'{spec.mods}+{spec.key}') if spec.key else None
             else: got = menu_chord(spec.action, lookup)

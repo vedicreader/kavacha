@@ -9,14 +9,11 @@ from fastcore.all import Path
 __all__ = ['ICNS_SIZES', 'ICO_SIZES', 'iconset', 'icns', 'ico', 'favicon', 'icons_for']
 
 # %% ../nbs/05_icons.ipynb #f00569e4
-#: The sizes an `.icns` carries, as `(pixels, iconset name)`. Retina entries are the same pixel
-#: count as the next size up, which is why `icon_16x16@2x` and `icon_32x32` are both 32.
 ICNS_SIZES = ((16, 'icon_16x16'), (32, 'icon_16x16@2x'), (32, 'icon_32x32'),
               (64, 'icon_32x32@2x'), (128, 'icon_128x128'), (256, 'icon_128x128@2x'),
               (256, 'icon_256x256'), (512, 'icon_256x256@2x'), (512, 'icon_512x512'),
               (1024, 'icon_512x512@2x'))
 
-#: What a Windows `.ico` holds. Above 256 the format stores a PNG, and nothing asks for one.
 ICO_SIZES = (16, 24, 32, 48, 64, 128, 256)
 
 # %% ../nbs/05_icons.ipynb #894757de
@@ -43,11 +40,7 @@ def iconset(src, out):
     return out
 
 def icns(src, out, keep_iconset=False):
-    """An `.icns` from one square image, through macOS's own `iconutil`.
-
-    `iconutil` is macOS-only, so this raises everywhere else rather than writing something a
-    bundle would accept and then draw wrongly.
-    """
+    "Build an `.icns` with macOS `iconutil`."
     out = Path(out)
     folder = out.with_suffix('.iconset')
     iconset(src, folder)
@@ -71,11 +64,7 @@ def ico(src, out, sizes=ICO_SIZES):
 
 # %% ../nbs/05_icons.ipynb #2e2ddd68
 def favicon(src, out, size=64):
-    """A `.png` favicon for the app's own web UI, so the tab and the Dock carry one mark.
-
-    Small: below about 64px a detailed mark stops carrying its line work, and a browser tab is
-    16px of it.
-    """
+    "Write a PNG favicon for the web UI."
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     _resized(_open(src), size).save(out)

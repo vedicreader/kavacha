@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=64"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "kavacha"
 dynamic = ["version"]
-description = "the casing: run a local web app in a native window, and package it as a Mac or Windows application"
+description = "run and package web apps as native desktop applications"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -32,12 +32,6 @@ Documentation = "https://vedicreader.github.io/kavacha"
 [project.entry-points.nbdev]
 kavacha = "kavacha._modidx:d"
 
-[tool.setuptools.dynamic]
-version = {attr = "kavacha.__version__"}
-
-[tool.setuptools.packages.find]
-include = ["kavacha"]
-
 [tool.nbdev]
 doc_host = "https://vedicreader.github.io"
 doc_baseurl = "/kavacha"
@@ -45,5 +39,14 @@ doc_baseurl = "/kavacha"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+
+[tool.hatch.build.targets.wheel]
+packages = ["kavacha"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/kavacha", "/README.md", "/pyproject.toml"]
+
+[tool.hatch.version]
+path = "kavacha/__init__.py"
 [dependency-groups]
 dev = ['pytest>=8.0.0', 'nbdev>=2.4.6', 'pillow>=10.0']

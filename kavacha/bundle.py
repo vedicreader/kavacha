@@ -10,25 +10,17 @@ __all__ = ['graft', 'link_duplicates', 'strip_zip', 'install_modern_icon', 'fini
 
 # %% ../nbs/02_bundle.ipynb #2b553810
 def graft(app, name, python=None):
-    """Put the real `name` package into a built bundle, over whatever the freezer left of it.
-
-    Some packages an archive simply cannot hold. `apsw` has the extension module for its own
-    `__init__`, so a flattened copy loses `apsw.ext`; `playwright` carries a Node binary it has to
-    *execute*, and a file inside an archive cannot be executed. Naming them in `packages` instead
-    only gets `ImportError: No module named ...`, because the lookup wants an `__init__.py` to find.
-    """
+    "Put the installed `name` package into a built bundle."
     import importlib.util
     spec = importlib.util.find_spec(name)
     if spec is None or not spec.submodule_search_locations:
         raise SystemExit(f'cannot graft {name}: it is not installed here')
     src = Path(first(spec.submodule_search_locations))
     lib = _lib_dir(app)
-    # The package carries compiled modules built for the interpreter running this, so a bundle on
-    # another version would take a wrong-ABI `.so` and fail at import with nothing to point at it.
     want = 'python%d.%d' % (python or sys.version_info[:2])
     if lib.name != want: raise SystemExit(f'cannot graft {name}: bundle is {lib.name}, this is {want}')
     dest = lib/name
-    for stray in lib.glob(f'{name}.*'): stray.unlink()     # the flattened extension module
+    for stray in lib.glob(f'{name}.*'): stray.unlink()
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(src, dest, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
     return dest.relative_to(app)
@@ -42,13 +34,7 @@ def _lib_dir(app):
 
 # %% ../nbs/02_bundle.ipynb #f054e586
 def link_duplicates(app, names, floor=1_000_000):
-    """Hardlink identical files across the grafted packages. Returns the megabytes saved.
-
-    `patchright` is a fork of `playwright` and ships the same 121MB Node binary, byte for byte, so
-    grafting both writes it twice. A hardlink leaves two real, executable files and one copy of the
-    bytes; these are read-only library files, so nothing can write through one and surprise the
-    other.
-    """
+    "Hardlink duplicate package files and return megabytes saved."
     lib = _lib_dir(app)
     seen, saved = {}, 0
     for name in names:
@@ -63,12 +49,7 @@ def link_duplicates(app, names, floor=1_000_000):
 
 # %% ../nbs/02_bundle.ipynb #9e0b3d82
 def strip_zip(app, prefixes=()):
-    """Rewrite the bundle's zip without entries nothing can read. Returns the megabytes saved.
-
-    Anything grafted is in the archive twice over, and some entries were never reachable: a package
-    that finds its own data with `Path(__file__).parent/...` and `.exists()` gets False for every
-    path inside an archive, so those megabytes are carried and never opened.
-    """
+    "Remove matching entries from the bundle archive and return megabytes saved."
     z = first(sorted(_lib_dir(app).parent.glob('python3*.zip')))
     if not z or not prefixes: return 0
     prefixes = tuple(prefixes)
@@ -86,13 +67,7 @@ def strip_zip(app, prefixes=()):
 
 # %% ../nbs/02_bundle.ipynb #22fd45d1
 def install_modern_icon(app, icon, identity=None, deployment_target='14.0'):
-    """Compile an Icon Composer document into a built bundle, after the freezer and before signing.
-
-    The `iconfile` in the spec is the ICNS fallback, which every freezer installs and every macOS
-    before 26 reads. The Icon Composer document is what 26 draws, and its plist entries must reach
-    `Info.plist` before a signature covers them. None when the document or the tooling is absent:
-    a machine without Xcode 26 still builds a working app, with the older icon.
-    """
+    "Install an Icon Composer icon before signing, retaining the ICNS fallback."
     icon = Path(icon) if icon else None
     if icon is None or not icon.is_dir(): return None
     try: from iconmage import install_icon
@@ -118,13 +93,7 @@ def finish(app, spec, identity=None):
 
 # %% ../nbs/02_bundle.ipynb #8be45025
 def frozen_distribution():
-    """A setuptools `Distribution` with no `install_requires`, which py2app 0.28.10+ refuses.
-
-    A build run from a project root makes setuptools read `pyproject.toml` and fill the field in
-    from `[project] dependencies`. A frozen build wants none of it: the spec's `packages` and
-    `includes` say what the bundle carries, because the scanner cannot see an import made inside a
-    function.
-    """
+    "Return a setuptools distribution that ignores project dependencies."
     from setuptools.dist import Distribution
     class Frozen(Distribution):
         def parse_config_files(self, *args, **kwargs):

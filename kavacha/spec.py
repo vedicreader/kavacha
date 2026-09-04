@@ -17,36 +17,23 @@ def tree(src, dest, skip=()):
     return sorted((d, sorted(v)) for d, v in dirs.items())
 
 def mypyc_modules(site=None):
-    """Compiled accelerators that sit beside a package rather than inside it.
-
-    `chardet` is built with mypyc, so importing it imports a top-level extension whose name is a
-    hash of the build. Nothing references it by name, so no scanner finds it, and the package looks
-    complete without it. The hash moves with the version, so it is read from the environment being
-    frozen rather than written down.
-    """
+    "Return top-level mypyc extension modules from `site`."
     import sysconfig
     site = Path(site or sysconfig.get_paths()['purelib'])
     return (sorted(f.name.split('.')[0] for f in site.glob('*__mypyc*.so')) +
             sorted(f.name.split('.')[0] for f in site.glob('*__mypyc*.pyd')))
 
 # %% ../nbs/01_spec.ipynb #ddd2b866
-#: Build tooling and other platforms' webview backends: about 100MB a frozen app never wanted.
 DEFAULT_EXCLUDES = ('tkinter', 'test', 'setuptools', 'wheel', 'py2app', 'py2exe',
                     'gi', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'clr', 'matplotlib')
 
-#: The webview backends each platform does want, so the others can be excluded.
 GUI_MODULE = {'darwin': 'webview.platforms.cocoa', 'win32': 'webview.platforms.winforms',
               'linux': 'webview.platforms.gtk'}
 
 # %% ../nbs/01_spec.ipynb #c4206b96
 @dataclass
 class App:
-    """One desktop app, described once. `build` turns this into whichever freezer fits the platform.
-
-    `packages` is the part nobody can guess: a freezer's scanner cannot see an import made inside a
-    function, which is most of any real application, so packages are named rather than discovered.
-    `includes` is the same for single modules. Both are additive to what the scanner does find.
-    """
+    """A desktop app specification for platform-specific bundling."""
     name: str
     entry: str                                  # the script the bundle runs
     version: str = '0.0.0'
@@ -72,7 +59,7 @@ class App:
     def bundle_name(self): return f'{self.name}.app' if sys.platform == 'darwin' else self.name
     def out(self, root): return Path(root)/'dist'/self.bundle_name
     def info_plist(self):
-        "The `Info.plist` a macOS bundle needs, with this app's entries over the ones every app wants."
+        "The Info.plist entries for this app."
         base = {
             'CFBundleName': self.name, 'CFBundleDisplayName': self.name,
             'CFBundleIdentifier': self.identifier,
@@ -81,47 +68,35 @@ class App:
             'LSApplicationCategoryType': self.category,
             'LSMinimumSystemVersion': self.min_macos,
             'NSHighResolutionCapable': True,
-            # Without this the app is locked to the light appearance, and a dark web UI renders
-            # against a white window.
             'NSRequiresAquaSystemAppearance': False,
-            # App Transport Security blocks cleartext HTTP, loopback included, so WKWebView refuses
-            # `http://127.0.0.1:<port>`. The narrow exemption, not `NSAllowsArbitraryLoads`.
             'NSAppTransportSecurity': {'NSAllowsLocalNetworking': True},
-            # Set before the interpreter starts, which nothing in Python can be. Both are wanted.
             'LSEnvironment': {'LANG': 'en_US.UTF-8', 'PYTHONUTF8': '1'},
         }
         if self.doc_types: base['CFBundleDocumentTypes'] = self.doc_types
         return base | dict(self.plist)
 
     def excluded(self, platform=None):
-        "Everything this build leaves out, including the webview backends it is not using."
+        "The exclusions for this build and platform."
         others = [m for p, m in GUI_MODULE.items() if p != (platform or sys.platform)]
         return sorted({*DEFAULT_EXCLUDES, *others, *self.excludes})
 
     def py2app_options(self):
-        "The `options={'py2app': ...}` dict, built from this spec."
+        "The py2app options for this spec."
         out = {'packages': list(self.packages), 'includes': list(self.includes),
                'excludes': self.excluded('darwin'), 'plist': self.info_plist(),
-               # Opened from the Dock and from `open`, never with a shell's argv conventions;
-               # argv emulation costs a visible Apple Event wait at every launch.
                'argv_emulation': False, 'semi_standalone': False, 'site_packages': True,
                'strip': True}
         if self.icon: out['iconfile'] = str(self.icon)
         return out
 
     def py2exe_options(self):
-        "The `options={'py2exe': ...}` dict, built from this spec."
+        "The py2exe options for this spec."
         return {'packages': list(self.packages), 'includes': list(self.includes),
                 'excludes': self.excluded('win32'), 'bundle_files': 3, 'compressed': 1}
 
 # %% ../nbs/01_spec.ipynb #be19a193
 def doc_types(extensions, view_elsewhere=('.svg', '.html', '.htm', '.pdf')):
-    """Finder document types for an editor: one entry for folders, one for the files it owns.
-
-    A folder stays `Alternate` — Finder is the right default for one, and this is what puts
-    "Open With" on it and makes a Dock drop mean something. `view_elsewhere` are the extensions a
-    browser renders and an editor would only show the source of.
-    """
+    "Return Finder document types for folders and owned files."
     exts = sorted({str(e).lstrip('.') for e in extensions if e not in view_elsewhere})
     return [
         {'CFBundleTypeName': 'Folder', 'CFBundleTypeRole': 'Viewer',
