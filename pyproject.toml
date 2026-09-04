@@ -14,12 +14,9 @@ keywords = ['py2app', 'py2exe', 'pywebview', 'desktop', 'packaging']
 classifiers = ["Natural Language :: English", "Intended Audience :: Developers",
                "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3",
                "Programming Language :: Python :: 3 :: Only"]
-# The spec, the build driver and the bundle surgery need nothing but fastcore: describing an app
-# and checking what a build would do should work on a machine that cannot build one.
 dependencies = ['fastcore>=1.8.17']
 
 [project.optional-dependencies]
-# The native window. Only the platform's own bindings are installed.
 window = ["pywebview>=5.3",
           "pyobjc-framework-Cocoa>=10.1; sys_platform == 'darwin'",
           "pyobjc-framework-WebKit>=10.1; sys_platform == 'darwin'",
@@ -27,7 +24,6 @@ window = ["pywebview>=5.3",
 icons = ['pillow>=10.0']
 macapp = ["kavacha[window,icons]", "py2app>=0.28.8; sys_platform == 'darwin'"]
 windows = ["kavacha[window,icons]", "py2exe>=0.14.2; sys_platform == 'win32'"]
-dev = ['pytest>=8.0.0', 'nbdev>=2.4.6', 'pillow>=10.0']
 
 [project.urls]
 Repository = "https://github.com/vedicreader/kavacha"
@@ -48,3 +44,6 @@ doc_baseurl = "/kavacha"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = ['pytest>=8.0.0', 'nbdev>=2.4.6', 'pillow>=10.0']
