@@ -11,13 +11,13 @@ __all__ = ['DEFAULT_EXCLUDES', 'GUI_MODULE', 'tree', 'mypyc_modules', 'App', 'do
 
 # %% ../nbs/01_spec.ipynb #8c0e2b9c
 def tree(src, dest, skip=()):
-    "Every file under `src` as freezer `(dest_dir, [files])` pairs, recursively."
+    "List every file under `src` as the `(dest_dir, [files])` pairs a freezer takes, with `src` mapped to `dest`."
     fs = globtastic(src, skip_folder_re=f'^({"|".join([*skip, "__pycache__"])})$', skip_file_re=r'^\.')
     dirs = groupby(fs, lambda f: str(Path(dest)/Path(f).parent.relative_to(src)))
     return sorted((d, sorted(v)) for d, v in dirs.items())
 
 def mypyc_modules(site=None):
-    "Return top-level mypyc extension modules from `site`."
+    "List the mypyc helper modules in `site`, which a freezer cannot find by following imports."
     import sysconfig
     site = Path(site or sysconfig.get_paths()['purelib'])
     return (sorted(f.name.split('.')[0] for f in site.glob('*__mypyc*.so')) +
@@ -33,7 +33,7 @@ GUI_MODULE = {'darwin': 'webview.platforms.cocoa', 'win32': 'webview.platforms.w
 # %% ../nbs/01_spec.ipynb #c4206b96
 @dataclass
 class App:
-    """A desktop app specification for platform-specific bundling."""
+    """Describe an app once, for whichever freezer this platform uses."""
     name: str
     entry: str                                  # the script the bundle runs
     version: str = '0.0.0'
@@ -44,10 +44,10 @@ class App:
     packages: list = field(default_factory=list)    # copied whole, not scanned
     includes: list = field(default_factory=list)    # single modules the scanner cannot reach
     excludes: list = field(default_factory=list)    # on top of `DEFAULT_EXCLUDES`
-    grafted: list = field(default_factory=list)     # put in place after the freezer runs
-    unreachable: list = field(default_factory=list) # archive prefixes nothing can read
+    grafted: list = field(default_factory=list)     # copied in after the freezer runs, because they fail inside its zip
+    unreachable: list = field(default_factory=list) # zip archive path prefixes to delete, because nothing imports them
     data: list = field(default_factory=list)        # `(dest_dir, [files])` pairs, as `tree` makes
-    plist: dict = field(default_factory=dict)       # merged over the defaults below
+    plist: dict = field(default_factory=dict)       # Info.plist entries that override the defaults in `info_plist`
     doc_types: list = field(default_factory=list)
     extras: list = field(default_factory=list)      # the extras a build environment installs
     min_macos: str = '11.0'
@@ -96,7 +96,7 @@ class App:
 
 # %% ../nbs/01_spec.ipynb #be19a193
 def doc_types(extensions, view_elsewhere=('.svg', '.html', '.htm', '.pdf')):
-    "Return Finder document types for folders and owned files."
+    "Build the `Info.plist` document types that let Finder open folders, and files with these `extensions`, in the app."
     exts = sorted({str(e).lstrip('.') for e in extensions if e not in view_elsewhere})
     return [
         {'CFBundleTypeName': 'Folder', 'CFBundleTypeRole': 'Viewer',

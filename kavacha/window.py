@@ -28,7 +28,7 @@ APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
 ENV_PREFIX = 'KAVACHA_'
 
 def use_app(name, cfg=None, env_prefix='KAVACHA_'):
-    "Wear `name`: its config directory, its storage and its environment prefix."
+    "Set the app name, the config and storage folders, and the environment variable prefix kavacha uses."
     global APP_NAME, CFG, STORAGE, ENV_PREFIX, EAGER_CDP
     APP_NAME, ENV_PREFIX = str(name or 'app'), str(env_prefix or '')
     CFG = Path(cfg) if cfg else Path(os.environ.get(f'{ENV_PREFIX}CFG') or xdg_config_home()/APP_NAME)
@@ -61,7 +61,7 @@ class ShellApi:
     "What the page may ask the native window for, as `window.pywebview.api.*`."
     on_open_folder = None
     def open_folder(self, path):
-        "Open a folder in a window of its own. pywebview runs every `js_api` call on its own thread."
+        "Ask the host to open `path` in a window of its own, and return whether a host callback took it."
         if not path or self.on_open_folder is None: return False
         self.on_open_folder(str(path))
         return True
@@ -81,7 +81,7 @@ class ShellApi:
 
 # %% ../nbs/04_window.ipynb #fd3e4208
 def backend(platform=None):
-    "pywebview's GUI name for `platform`, or None where Leela has no supported webview."
+    "pywebview's GUI name for `platform`, or None where there is no supported webview."
     return BACKENDS.get(platform or sys.platform)
 
 # %% ../nbs/04_window.ipynb #533b9552
@@ -95,7 +95,7 @@ def shell_ready(platform=None):
 
 # %% ../nbs/04_window.ipynb #5ce28d0d
 def wait_for_http(url, timeout=60, interval=.1):
-    "Wait for `url` until `timeout`; return whether it answered."
+    "Wait until `url` gives any HTTP response or `timeout` seconds pass, and return whether it did."
     import urllib.request
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -108,7 +108,7 @@ def wait_for_http(url, timeout=60, interval=.1):
 
 # %% ../nbs/04_window.ipynb #c3d0bac2
 def start_cdp(port=9223, headless=True, wait=False, timeout=None, profile=None):
-    "Bring up the persistent CDP Chrome the inline browser renders into, on a thread."
+    "Start a Chrome controlled over CDP on a background thread, through fossick, and return the thread."
     def boot():
         try:
             from fossick.cdp import _debug_ready, cdp_setup
@@ -123,7 +123,7 @@ def start_cdp(port=9223, headless=True, wait=False, timeout=None, profile=None):
 
 # %% ../nbs/04_window.ipynb #061ae319
 def warm_cdp(port=9223, profile=None):
-    "Start Chrome at launch only if `$KAVACHA_CDP_EAGER` asks for it. See `docs/desktop.md`."
+    "Start the CDP Chrome at launch, but only when the `EAGER_CDP` environment variable is 1, true or yes."
     if os.environ.get(EAGER_CDP, '').strip() not in ('1', 'true', 'yes'): return None
     return start_cdp(port, headless=True, profile=profile)
 
@@ -147,7 +147,7 @@ i{{font-style:normal;font-size:13px;opacity:.6}}</style>
 <div><b>{name}</b><i style="{style}">{note}</i></div>"""
 
 def splash(name=None, note='starting the workspace…', style=''):
-    "The holding page a window shows before its URL answers, wearing the host's name."
+    "Return the holding page a window shows until its server answers, titled with the app's name."
     return SPLASH.format(name=name or APP_NAME, note=note, style=style)
 
 # %% ../nbs/04_window.ipynb #ede581c5
@@ -468,7 +468,7 @@ def mac_key(chord):
 
 # %% ../nbs/04_window.ipynb #73585946
 def menu_chord(action, lookup):
-    "Return a global menu chord that may pre-empt the web view."
+    "Return the AppKit chord for `action` if it is bound, global and uses a modifier, else None."
     k = lookup(action)
     if k is None or not k.bound or k.scope != 'global': return None
     first = k.keys[0]
@@ -484,7 +484,7 @@ def _title(row, lookup):
 
 # %% ../nbs/04_window.ipynb #923d6167
 def menu_bar(bar, lookup, on_action, run=None):
-    "pywebview menus for `bar`, plus the table `_decorate` needs to finish them off AppKit-side."
+    "Build pywebview menus from `bar`, and the row table `_decorate` uses to add native shortcuts and selectors."
     from webview.menu import Menu, MenuAction, MenuSeparator
     run = run or _menu_run
     menus, specs = [], {}

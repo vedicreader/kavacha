@@ -22,7 +22,7 @@ def run(*args, **kw):
 
 # %% ../nbs/03_build.ipynb #98cf7446
 def lock_requirements(root, extras=(), out=None):
-    "Export `uv.lock` as pinned requirements, or return `None`."
+    "Export the `uv.lock` in `root` as a pinned requirements file and return its path, or `None` if that is not possible."
     root = Path(root)
     if not (root/'uv.lock').exists(): return None
     args = ['uv', 'export', '--frozen', '--no-dev', '--no-hashes', '--no-emit-project',
@@ -40,7 +40,7 @@ def lock_requirements(root, extras=(), out=None):
 
 # %% ../nbs/03_build.ipynb #0431c2e0
 def build_venv(python, venv, root, extras=(), force=False):
-    "A plain build venv using `python`."
+    "Create or update the build venv at `venv` from `python`, install the project with pinned requirements, and return its Python."
     venv = Path(venv)
     if force: shutil.rmtree(venv, ignore_errors=True)
     exe = venv/'bin'/'python'
@@ -60,7 +60,7 @@ def build_venv(python, venv, root, extras=(), force=False):
 
 # %% ../nbs/03_build.ipynb #43eee4ee
 def git_stamp(root, version=''):
-    "The commit the tree is on and whether it is dirty, or `None` outside a checkout."
+    "Return the commit, dirty flag, version and build time for the checkout at `root`, or `None` outside one."
     def git(*a):
         r = subprocess.run(['git', *a], cwd=str(root), capture_output=True, text=True, timeout=30)
         return r.stdout.strip() if not r.returncode else None
@@ -76,7 +76,7 @@ def stamp_path(bundle):
     return (b/'Contents'/'Resources'/STAMP) if b.suffix == '.app' else (b/STAMP)
 
 def write_stamp(bundle, root, version=''):
-    "Write and return the bundle's source stamp."
+    "Write the build stamp into `bundle` and return it."
     if (st := git_stamp(root, version)) is None:
         st = {'commit': '', 'dirty': False, 'version': version,
               'built': time.strftime('%Y-%m-%dT%H:%M:%S')}
@@ -91,7 +91,7 @@ def read_stamp(bundle):
 
 # %% ../nbs/03_build.ipynb #accc2d7f
 def check(spec, root, venv=None):
-    "What a build would do here, without doing it. Answers on any platform, Linux included."
+    "Report what a build would do on this machine without doing it; works on any platform, Linux included."
     root, venv = Path(root), Path(venv or Path(root)/'packaging'/'.app-venv')
     rows = {'platform': sys.platform, 'interpreter': sys.executable,
             'app': spec.name, 'out': str(spec.out(root))}
@@ -113,7 +113,7 @@ def check(spec, root, venv=None):
 # %% ../nbs/03_build.ipynb #6215af9c
 def build(spec, root, setup_py, venv=None, alias=False, force=False, rebuild_venv=False,
           identity=None):
-    "Build `spec` into `root/dist`, using framework Python on macOS."
+    "Freeze `spec` into `root/dist`, switching to a framework Python first on macOS when needed."
     root, venv = Path(root), Path(venv or Path(root)/'packaging'/'.app-venv')
     out = spec.out(root)
     if not force and (live := running_from(out)):

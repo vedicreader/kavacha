@@ -20,7 +20,7 @@ class MenuItem:
 # %% ../nbs/06_menus.ipynb #d30dc4ea
 @dataclass(frozen=True)
 class Std:
-    "A row AppKit implements itself. The selector goes to the responder chain, target nil."
+    "A row AppKit handles itself, by sending `selector` to whatever has focus."
     title: str
     selector: str
     key: str = ''
@@ -29,7 +29,7 @@ class Std:
 # %% ../nbs/06_menus.ipynb #86983e95
 @dataclass(frozen=True)
 class Js:
-    "A row no action backs, named by the expression it runs."
+    "A row that runs the JavaScript expression `expr` in the focused window."
     title: str
     expr: str
 

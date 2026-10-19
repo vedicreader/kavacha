@@ -11,7 +11,7 @@ __all__ = ['graft', 'link_duplicates', 'strip_zip', 'install_modern_icon', 'is_m
 
 # %% ../nbs/02_bundle.ipynb #2b553810
 def graft(app, name, python=None):
-    "Put the installed `name` package into a built bundle."
+    "Copy the installed package `name` into a built bundle, replacing the freezer's copy, and return where it went."
     import importlib.util
     spec = importlib.util.find_spec(name)
     if spec is None or not spec.submodule_search_locations:
@@ -38,7 +38,7 @@ def _lib_dir(app):
 
 # %% ../nbs/02_bundle.ipynb #f054e586
 def link_duplicates(app, names, floor=1_000_000):
-    "Hardlink duplicate package files and return megabytes saved."
+    "Hardlink identical files of at least `floor` bytes across the packages in `names`, and return the megabytes saved."
     lib = _lib_dir(app)
     seen, saved = {}, 0
     for name in names:
@@ -53,7 +53,7 @@ def link_duplicates(app, names, floor=1_000_000):
 
 # %% ../nbs/02_bundle.ipynb #9e0b3d82
 def strip_zip(app, prefixes=()):
-    "Remove matching entries from the bundle archive and return megabytes saved."
+    "Delete the entries that start with any of `prefixes` from the bundle's zip archive, and return the megabytes saved."
     z = first(sorted(_lib_dir(app).parent.glob('python3*.zip')))
     if not z or not prefixes: return 0
     prefixes = tuple(prefixes)
@@ -71,7 +71,7 @@ def strip_zip(app, prefixes=()):
 
 # %% ../nbs/02_bundle.ipynb #22fd45d1
 def install_modern_icon(app, icon, identity=None, deployment_target='14.0'):
-    "Install an Icon Composer icon before signing, retaining the ICNS fallback."
+    "Install an Icon Composer `.icon` into the bundle before signing, keeping the `.icns` icon as the fallback."
     icon = Path(icon) if icon else None
     if icon is None or not icon.is_dir(): return None
     try: from iconmage import install_icon
@@ -177,7 +177,7 @@ def _install(src, dest, fw):
     if shutil.which('codesign'): subprocess.run(['codesign', '--force', '-s', '-', dest], check=True, capture_output=True)
 
 def mend_frameworks(app, search=()):
-    "Replace each corrupt library in `Contents/Frameworks` with a clean installed copy; report basenames two sources share."
+    "Replace each corrupt library in `Contents/Frameworks` with a healthy installed copy, and report file names with more than one build installed."
     fw = Path(app)/'Contents'/'Frameworks'
     libs = [f for f in fw.rglob('*') if f.is_file() and not f.is_symlink() and is_macho(f)] if fw.is_dir() else []
     src = _sources(app, {f.name for f in libs}, search)
@@ -195,7 +195,7 @@ def mend_frameworks(app, search=()):
 def _run(*args): return subprocess.run([str(a) for a in args], check=True)
 
 def sign(app, identity, entitlements=None, run=None):
-    "Sign each Mach-O inode deepest first, then each framework, then the bundle, keeping hardlinks; never `--deep`."
+    "Code-sign every Mach-O file deepest first, then each framework, then the bundle, signing hardlinked files once and never using `--deep`."
     app, run = Path(app), run or _run
     hard = ('codesign', '--force', '--options', 'runtime', '--timestamp=none' if identity == '-' else '--timestamp')
     ent = lambda on: ['--entitlements', entitlements] if on and entitlements else []
@@ -215,7 +215,7 @@ def sign(app, identity, entitlements=None, run=None):
 
 # %% ../nbs/02_bundle.ipynb #4f455d17
 def finish(app, spec, identity=None):
-    "Everything a bundle needs after the freezer wrote it, in the order it needs it."
+    "Run every repair a frozen bundle needs, in order, and return what each step did."
     out = {}
     for name in spec.grafted: out[name] = str(graft(app, name))
     dropped = [*spec.unreachable, *[f'{n}/' for n in spec.grafted]]
@@ -227,7 +227,7 @@ def finish(app, spec, identity=None):
 
 # %% ../nbs/02_bundle.ipynb #8be45025
 def frozen_distribution():
-    "Return a setuptools distribution that ignores project dependencies."
+    "Return a setuptools `Distribution` class that ignores the dependencies the project declares."
     from setuptools.dist import Distribution
     class Frozen(Distribution):
         def parse_config_files(self, *args, **kwargs):

@@ -40,7 +40,7 @@ def iconset(src, out):
     return out
 
 def icns(src, out, keep_iconset=False):
-    "Build an `.icns` with macOS `iconutil`."
+    "Build the `.icns` file `out` from `src` with macOS `iconutil`."
     out = Path(out)
     folder = out.with_suffix('.iconset')
     iconset(src, folder)

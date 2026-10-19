@@ -66,7 +66,7 @@ def framework_python(candidates=FRAMEWORK_CANDIDATES):
 
 # %% ../nbs/00_probe.ipynb #8e6da7fd
 def wait_for_http(url, timeout=60, interval=.1):
-    "Block until `url` answers, or `timeout` passes. True if the server came up."
+    "Wait until `url` answers with a success status or `timeout` seconds pass, and return whether it did."
     import urllib.request
     deadline = time.time() + timeout
     while time.time() < deadline:
