@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.6
+
+- `kavacha.window` names five things a host reaches for: `dock_delegates`, `OpenHandler`, `RecentTarget`, `hidden_windows` and `keyed_windows`. The old private names stay as aliases for the same objects.
+- `start_cdp` asks fossick's public `debug_ready`, which needs fossick 0.1.19 or later.
+
 ## 0.0.5
 
 - A forked child gets the default SIGTERM back and drops the parent's wakeup socket, so stopping a worker works and cannot quit the app.

@@ -5,11 +5,12 @@ from __future__ import annotations
 
 # %% auto #0
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
-           'DOCK_RECENT', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app',
-           'errstr', 'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size',
-           'splash', 'dock_menu', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
-           'shell_api', 'make_window', 'off_main_thread', 'open_window', 'run_shell', 'menus', 'watch_open_events',
-           'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch']
+           'DOCK_RECENT', 'hidden_windows', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'CMD', 'CTRL',
+           'ALT', 'SHIFT', 'use_app', 'errstr', 'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp',
+           'warm_cdp', 'window_size', 'splash', 'dock_menu', 'dock_delegates', 'quit_cleanly', 'quit_on_sigterm',
+           'quiet_text_substitution', 'keep_running_in_dock', 'shell_api', 'make_window', 'off_main_thread',
+           'open_window', 'run_shell', 'menus', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js',
+           'install_menu_patch', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, sys, threading, time
@@ -111,9 +112,9 @@ def start_cdp(port=9223, headless=True, wait=False, timeout=None, profile=None):
     "Start a Chrome controlled over CDP on a background thread, through fossick, and return the thread."
     def boot():
         try:
-            from fossick.cdp import _debug_ready, cdp_setup
+            from fossick.cdp import debug_ready, cdp_setup
             from fossick.core import syncy
-            if _debug_ready(port): return
+            if debug_ready(port): return
             syncy(cdp_setup(port=port, headless=headless, timeout=timeout, user_data_dir=profile))
         except Exception as e: print(f'  inline browser unavailable: {errstr(e)}')
     t = threading.Thread(target=boot, daemon=True, name='kavacha-cdp-boot')
@@ -165,7 +166,7 @@ _dock_target = None
 def _recent_target(on_folder):
     "One for the life of the app: a menu holds no reference to a Python object, so this must."
     global _dock_target
-    if _dock_target is None: _dock_target = _RecentTarget.alloc().init_with(on_folder)
+    if _dock_target is None: _dock_target = RecentTarget.alloc().init_with(on_folder)
     return _dock_target
 
 # %% ../nbs/04_window.ipynb #299e331c
@@ -196,10 +197,13 @@ def _disabled(title):
     return item
 
 # %% ../nbs/04_window.ipynb #928bfb4b
-_hidden, _on_folder, _delegates, _on_recent = [], None, None, None
+#: Windows closed but kept alive for the Dock icon to bring back, most recent last.
+hidden_windows = []
+_hidden = hidden_windows
+_on_folder, _delegates, _on_recent = None, None, None
 
 # %% ../nbs/04_window.ipynb #4903e49d
-def _dock_delegates():
+def dock_delegates():
     "The two delegate subclasses. Built once: an Objective-C class name is global to the runtime."
     global _delegates
     if _delegates is not None: return _delegates
@@ -208,12 +212,12 @@ def _dock_delegates():
     class Windows(BrowserView.WindowDelegate):
         def windowShouldClose_(self, window):
             window.orderOut_(None)
-            if window in _hidden: _hidden.remove(window)
-            _hidden.append(window)
+            if window in hidden_windows: hidden_windows.remove(window)
+            hidden_windows.append(window)
             return NO
     class App(BrowserView.AppDelegate):
         def applicationShouldHandleReopen_hasVisibleWindows_(self, app, visible):
-            if not visible and _hidden: _hidden.pop().makeKeyAndOrderFront_(None)
+            if not visible and hidden_windows: hidden_windows.pop().makeKeyAndOrderFront_(None)
             return YES
         def applicationWillTerminate_(self, note): quit_cleanly()
         def applicationDockMenu_(self, app):
@@ -221,6 +225,7 @@ def _dock_delegates():
             except Exception as e: print(f'  dock menu: {errstr(e)}'); return None
     _delegates = (Windows, App)
     return _delegates
+_dock_delegates = dock_delegates
 
 # %% ../nbs/04_window.ipynb #dd499ca0
 #: Set once a quit begins, so a host's background work can tell being reaped from failing.
@@ -335,7 +340,7 @@ def keep_running_in_dock(on_folder=None, recent=None):
     try:
         from webview.platforms.cocoa import BrowserView
         _on_folder, _on_recent = on_folder, recent
-        BrowserView.WindowDelegate, BrowserView.AppDelegate = _dock_delegates()
+        BrowserView.WindowDelegate, BrowserView.AppDelegate = dock_delegates()
         return True
     except Exception as e:
         print(f'  the last window will quit {APP_NAME}: {errstr(e)}')
@@ -349,7 +354,9 @@ WINDOW_KW = dict(min_size=MIN_SIZE, background_color='#171b20', text_select=True
 _api = None
 
 # %% ../nbs/04_window.ipynb #62865c1c
-_windows = {}
+#: The open windows that have a key, by key, so `open_window` raises one rather than opening it twice.
+keyed_windows = {}
+_windows = keyed_windows
 
 # %% ../nbs/04_window.ipynb #4553e889
 def shell_api():
@@ -377,12 +384,12 @@ def off_main_thread(fn, name='kavacha-shell'):
 def open_window(url, title=None, key=None, url_wait=90):
     "A window on `url`, raised rather than opened twice when `key` already has one."
     title = title or APP_NAME
-    if key and (window := _windows.get(key)) is not None:
+    if key and (window := keyed_windows.get(key)) is not None:
         try: window.show()
         except Exception as e: print(f'  could not raise the window for {title}: {errstr(e)}')
         return window
     window = make_window(title)
-    if key: _windows[key] = window
+    if key: keyed_windows[key] = window
     _point(window, url, url_wait)
     return window
 
@@ -411,7 +418,7 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
         quit_on_sigterm()
     windows = [make_window(t, size) for t in titles]
     for key, window in zip(keys, windows):
-        if key: _windows[key] = window
+        if key: keyed_windows[key] = window
     if open_folder is not None: watch_open_events(open_folder)
     def load(*_):
         "Once the GUI loop is up: wait for the server, then point each window at it."
@@ -456,7 +463,7 @@ def watch_open_events(on_folder):
     try:
         mgr = NSAppleEventManager.sharedAppleEventManager()
         mgr.setEventHandler_andSelector_forEventClass_andEventID_(
-            _OpenHandler.alloc().init_with(handle), b'handleEvent:reply:',
+            OpenHandler.alloc().init_with(handle), b'handleEvent:reply:',
             code('aevt'), code('odoc'))
         return handle
     except Exception as e:
@@ -467,10 +474,10 @@ def watch_open_events(on_folder):
 try:                                     # pragma: no cover - macOS only
     import objc
     from Foundation import NSObject
-    class _RecentTarget(NSObject):
+    class RecentTarget(NSObject):
         "A target for a Dock menu row."
         def init_with(self, fn):
-            self = objc.super(_RecentTarget, self).init()
+            self = objc.super(RecentTarget, self).init()
             if self is None: return None
             self._fn = fn
             return self
@@ -478,18 +485,18 @@ try:                                     # pragma: no cover - macOS only
             path = sender.representedObject()
             if self._fn and path: self._fn(str(path))
 
-    class _OpenHandler(NSObject):
+    class OpenHandler(NSObject):
         "An Apple Event handler must be a selector on an Objective-C object."
         def init_with(self, fn):
-            self = objc.super(_OpenHandler, self).init()
+            self = objc.super(OpenHandler, self).init()
             if self is None: return None
             self._fn = fn
             return self
         def handleEvent_reply_(self, event, reply): self._fn(event, reply)
 except Exception:                        # pragma: no cover - everywhere else
-    _OpenHandler = _RecentTarget = None
-
-
+    OpenHandler = RecentTarget = None
+_OpenHandler, _RecentTarget = OpenHandler, RecentTarget
+_all_ = ['OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #2abce1db
 CMD, CTRL, ALT, SHIFT = 1 << 20, 1 << 18, 1 << 19, 1 << 17
