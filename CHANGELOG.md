@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.7
+
+- `ShellApi.set_background` lets a page with themes give the native window its background, as `window.pywebview.api.set_background('#rrggbb')`. Every open window repaints on macOS, including what WebKit draws past the page during a resize, and later windows open on the colour. Anything but `#rrggbb` is refused.
+- `run_shell` and `make_window` take `background`: one colour, or a `(light, dark)` pair that `window_background` picks from by the system's mode. The splash and the unreachable page draw on it, with dark text on a light colour.
+
 ## 0.0.6
 
 - `kavacha.window` names five things a host reaches for: `dock_delegates`, `OpenHandler`, `RecentTarget`, `hidden_windows` and `keyed_windows`. The old private names stay as aliases for the same objects.

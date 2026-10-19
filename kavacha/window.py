@@ -6,14 +6,15 @@ from __future__ import annotations
 # %% auto #0
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
            'DOCK_RECENT', 'hidden_windows', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'CMD', 'CTRL',
-           'ALT', 'SHIFT', 'use_app', 'errstr', 'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp',
-           'warm_cdp', 'window_size', 'splash', 'dock_menu', 'dock_delegates', 'quit_cleanly', 'quit_on_sigterm',
-           'quiet_text_substitution', 'keep_running_in_dock', 'shell_api', 'make_window', 'off_main_thread',
-           'open_window', 'run_shell', 'menus', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js',
-           'install_menu_patch', 'OpenHandler', 'RecentTarget']
+           'ALT', 'SHIFT', 'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'backend', 'shell_ready',
+           'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu', 'dock_delegates',
+           'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api',
+           'system_dark', 'window_background', 'make_window', 'off_main_thread', 'open_window', 'run_shell', 'menus',
+           'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'OpenHandler',
+           'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
-import os, sys, threading, time
+import os, re, sys, threading, time
 
 # %% ../nbs/04_window.ipynb #49187062
 from fastcore.all import Path
@@ -57,6 +58,25 @@ STORAGE = CFG/'webview'
 # %% ../nbs/04_window.ipynb #9ef17b53
 EAGER_CDP = 'KAVACHA_CDP_EAGER'
 
+# %% ../nbs/04_window.ipynb #5ebcf5ba
+def is_colour(c):
+    "Whether `c` is a `#rrggbb` colour."
+    return isinstance(c, str) and re.fullmatch(r'#[0-9a-fA-F]{6}', c) is not None
+
+def paint_background(window, colour):
+    "Give pywebview `window` the native background `colour`. On macOS an open window repaints now."
+    window.background_color = colour
+    if sys.platform != 'darwin': return
+    from PyObjCTools.AppHelper import callAfter
+    from webview.platforms.cocoa import BrowserView
+    def go():
+        if (bv := BrowserView.instances.get(window.uid)) is None: return
+        c = BrowserView.nscolor_from_hex(colour)
+        bv.window.setBackgroundColor_(c)
+        # What WebKit draws past the page's edge while it catches up with a resize.
+        if bv.webview.respondsToSelector_('setUnderPageBackgroundColor:'): bv.webview.setUnderPageBackgroundColor_(c)
+    callAfter(go)
+
 # %% ../nbs/04_window.ipynb #747b2cb6
 class ShellApi:
     "What the page may ask the native window for, as `window.pywebview.api.*`."
@@ -79,6 +99,15 @@ class ShellApi:
     def recent(self):
         "Whatever the host offers as recent folders, or nothing."
         return list(self.on_recent()) if self.on_recent else []
+    background = None
+    def set_background(self, colour):
+        "Paint every open window's native background `colour`, and open later windows on it. False unless `#rrggbb`."
+        if not is_colour(colour): return False
+        self.background = colour
+        try: import webview
+        except ImportError: return True
+        for w in list(webview.windows): paint_background(w, colour)
+        return True
 
 # %% ../nbs/04_window.ipynb #fd3e4208
 def backend(platform=None):
@@ -140,21 +169,28 @@ def window_size(spec=None):
 
 # %% ../nbs/04_window.ipynb #97a7c39c
 SPLASH = """<!doctype html><meta charset=utf-8><title>{name}</title>
-<style>html,body{{height:100%;margin:0;background:#171b20;color:#f4f7f9;
+<style>html,body{{height:100%;margin:0;background:{bg};color:{ink};
 font:15px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 display:flex;align-items:center;justify-content:center}}
 div{{text-align:center;opacity:.85}}b{{display:block;font-size:34px;letter-spacing:-.02em;margin-bottom:10px}}
 i{{font-style:normal;font-size:13px;opacity:.6}}</style>
 <div><b>{name}</b><i style="{style}">{note}</i></div>"""
 
-def splash(name=None, note='starting the workspace…', style=''):
+def is_light(colour):
+    "Whether `#rrggbb` is a light colour, so dark ink reads on it."
+    r, g, b = (int(colour[i:i+2], 16) for i in (1, 3, 5))
+    return .299*r + .587*g + .114*b > 140
+
+def splash(name=None, note='starting the workspace…', style='', background='#171b20'):
     "Return the holding page a window shows until its server answers, titled with the app's name."
-    return SPLASH.format(name=name or APP_NAME, note=note, style=style)
+    ink = '#1f2328' if is_light(background) else '#f4f7f9'
+    return SPLASH.format(name=name or APP_NAME, note=note, style=style, bg=background, ink=ink)
 
 # %% ../nbs/04_window.ipynb #ede581c5
-def _unreachable(url):
+def _unreachable(url, background='#171b20'):
     "The same splash, saying why nothing arrived."
-    return splash(note=f'the workspace at {url} did not answer', style='color:#e06c75')
+    red = '#b3261e' if is_light(background) else '#e06c75'
+    return splash(note=f'the workspace at {url} did not answer', style=f'color:{red}', background=background)
 
 # %% ../nbs/04_window.ipynb #c9ba99ed
 DOCK_RECENT = 8
@@ -365,14 +401,29 @@ def shell_api():
     if _api is None: _api = ShellApi()
     return _api
 
+# %% ../nbs/04_window.ipynb #2836717b
+def system_dark():
+    "Whether macOS is in dark mode. False elsewhere."
+    if sys.platform != 'darwin': return False
+    try:
+        from Foundation import NSUserDefaults
+        return NSUserDefaults.standardUserDefaults().stringForKey_('AppleInterfaceStyle') == 'Dark'
+    except Exception: return False
+
+def window_background(background=None):
+    "The colour a window opens on: `background`, a `(light, dark)` pair by the system's mode, else the last one set, else the default."
+    if isinstance(background, (tuple, list)): background = background[system_dark()]
+    return next(c for c in (background, shell_api().background, WINDOW_KW['background_color']) if is_colour(c))
+
 # %% ../nbs/04_window.ipynb #b52f1957
-def make_window(title=None, size=None):
-    "A window on the splash, waiting for a URL."
+def make_window(title=None, size=None, background=None):
+    "A window on the splash, waiting for a URL, on `window_background(background)`."
     import webview
     w, h = size or window_size()
+    bg = window_background(background)
     STORAGE.mkdir(parents=True, exist_ok=True)
-    return webview.create_window(title or APP_NAME, html=splash(title or APP_NAME), width=w, height=h,
-                                 js_api=shell_api(), **WINDOW_KW)
+    return webview.create_window(title or APP_NAME, html=splash(title or APP_NAME, background=bg), width=w, height=h,
+                                 js_api=shell_api(), **{**WINDOW_KW, 'background_color': bg})
 
 # %% ../nbs/04_window.ipynb #48f7ad1a
 def off_main_thread(fn, name='kavacha-shell'):
@@ -397,11 +448,11 @@ def open_window(url, title=None, key=None, url_wait=90):
 def _point(window, url, url_wait=90):
     "Wait for the server, then show the workspace. A window that never answers says so."
     if wait_for_http(url, timeout=url_wait): window.load_url(url)
-    else: window.load_html(_unreachable(url))
+    else: window.load_html(_unreachable(url, getattr(window, 'background_color', None) or WINDOW_KW['background_color']))
 
 # %% ../nbs/04_window.ipynb #022366f0
 def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_ready=None,
-              on_open_folder=None, keys=(), bar=(), lookup=None, on_action=None, on_recent=None):
+              on_open_folder=None, keys=(), bar=(), lookup=None, on_action=None, on_recent=None, background=None):
     "Open one native window per workspace URL and block until they close."
     ok, why = shell_ready()
     if not ok: raise RuntimeError(why)
@@ -412,6 +463,7 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
     keys = list(keys) + [None] * (len(urls) - len(keys))
     open_folder = off_main_thread(on_open_folder, 'kavacha-open-folder') if on_open_folder else None
     shell_api().on_open_folder = open_folder
+    if background is not None: shell_api().set_background(window_background(background))
     if sys.platform == 'darwin':
         quiet_text_substitution()
         keep_running_in_dock(open_folder, on_recent)
