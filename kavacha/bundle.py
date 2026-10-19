@@ -2,11 +2,12 @@
 
 # %% ../nbs/02_bundle.ipynb #4767bcd3
 from __future__ import annotations
-import hashlib, os, shutil, sys, zipfile
+import hashlib, os, shutil, struct, subprocess, sys, zipfile
 from fastcore.all import Path, first
 
 # %% auto #0
-__all__ = ['graft', 'link_duplicates', 'strip_zip', 'install_modern_icon', 'finish', 'frozen_distribution']
+__all__ = ['graft', 'link_duplicates', 'strip_zip', 'install_modern_icon', 'is_macho', 'macho', 'corrupt', 'mend_frameworks',
+           'sign', 'finish', 'frozen_distribution']
 
 # %% ../nbs/02_bundle.ipynb #2b553810
 def graft(app, name, python=None):
@@ -80,6 +81,135 @@ def install_modern_icon(app, icon, identity=None, deployment_target='14.0'):
         print(f'  Icon Composer icon not installed ({type(e).__name__}: {e}); keeping the ICNS one')
         return None
 
+# %% ../nbs/02_bundle.ipynb #84822735
+_THIN = {b'\xcf\xfa\xed\xfe': ('<', 32), b'\xce\xfa\xed\xfe': ('<', 28), b'\xfe\xed\xfa\xcf': ('>', 32), b'\xfe\xed\xfa\xce': ('>', 28)}
+_FAT = {b'\xca\xfe\xba\xbe': ('>2I', 20), b'\xca\xfe\xba\xbf': ('>2Q', 32)}
+_LOADS = {0xc, 0x20, 0x80000018, 0x8000001f, 0x80000023}
+
+def is_macho(p):
+    "Whether `p` starts with a Mach-O or universal header."
+    try:
+        with open(p, 'rb') as f: return f.read(4) in (_THIN.keys() | _FAT.keys() | {b'\xbe\xba\xfe\xca'})
+    except OSError: return False
+
+def _slice(f, off, size):
+    "Header facts for the Mach-O slice at `off` in open file `f`."
+    f.seek(off); b = f.read(4096)
+    if b[:4] not in _THIN: return dict(type=6, size=size, cmds_end=size+1, seg_end=0, sig_end=0, id=None, version=0, uuid=None, deps=[], rpaths=[])
+    e, hs = _THIN[b[:4]]
+    ftype, ncmds, sizeofcmds = struct.unpack_from(e+'3I', b, 12)
+    if hs+sizeofcmds > len(b): f.seek(off); b = f.read(hs+sizeofcmds)
+    r = dict(type=ftype, size=size, cmds_end=hs+sizeofcmds, seg_end=0, sig_end=0, id=None, version=0, uuid=None, deps=[], rpaths=[])
+    p = hs
+    def s(o): return b[p+struct.unpack_from(e+'I', b, p+o)[0]:p+n].split(b'\0')[0].decode(errors='replace')
+    for _ in range(ncmds):
+        if p+8 > len(b) or (n := struct.unpack_from(e+'I', b, p+4)[0]) < 8: r['cmds_end'] = size+1; break
+        cmd = struct.unpack_from(e+'I', b, p)[0]
+        if cmd in (0x1, 0x19):
+            fo, fs = struct.unpack_from(e+('2Q' if cmd == 0x19 else '2I'), b, p+(40 if cmd == 0x19 else 32))
+            if fs: r['seg_end'] = max(r['seg_end'], fo+fs)
+        elif cmd == 0x1d: r['sig_end'] = sum(struct.unpack_from(e+'2I', b, p+8))
+        elif cmd == 0x1b: r['uuid'] = b[p+8:p+24]
+        elif cmd == 0xd: r['id'], r['version'] = s(8), struct.unpack_from(e+'I', b, p+16)[0]
+        elif cmd in _LOADS: r['deps'].append(s(8))
+        elif cmd == 0x8000001c: r['rpaths'].append(s(8))
+        p += n
+    return r
+
+def macho(p):
+    "Header facts for each architecture slice of `p`, or `None` when it is not Mach-O."
+    try:
+        with open(p, 'rb') as f:
+            m, size = f.read(8), os.fstat(f.fileno()).st_size
+            if m[:4] in _THIN: return [_slice(f, 0, size)]
+            if m[:4] not in _FAT or not 0 < (k := struct.unpack('>I', m[4:])[0]) < 32: return None
+            fmt, w = _FAT[m[:4]]
+            arches = [struct.unpack(fmt, f.read(w)[8:8+struct.calcsize(fmt)]) for _ in range(k)]
+            return [_slice(f, o, n) if o+n <= size else _slice(f, size, n) for o, n in arches]
+    except (OSError, struct.error): return None
+
+def corrupt(p):
+    "Whether a slice of `p` has load commands that do not describe its body, which `codesign` refuses."
+    return any(s['type'] in (2, 6, 8) and (s['cmds_end'] > s['size'] or s['seg_end'] != s['size'] or s['sig_end'] > s['size'])
+               for s in macho(p) or [])
+
+# %% ../nbs/02_bundle.ipynb #13da6fe0
+def _resolve(p, s):
+    "Paths the dependencies of slice `s` of `p` resolve to on this machine."
+    here = str(Path(p).parent)
+    rps = [r.replace('@loader_path', here) for r in s['rpaths']]
+    for d in s['deps']:
+        if d.startswith('@rpath/'): yield from (Path(r)/d[7:] for r in rps)
+        elif not d.startswith('@executable_path'): yield Path(d.replace('@loader_path', here))
+
+def _sources(app, names, search=()):
+    "Installed copies of each basename in `names` that the bundled packages and the interpreter link."
+    import site, sysconfig
+    lib = _lib_dir(app)
+    pkgs = {p.name for p in [*lib.iterdir(), *(lib/'lib-dynload').glob('*')]}
+    if (z := first(sorted(lib.parent.glob('python3*.zip')))):
+        with zipfile.ZipFile(z) as f: pkgs |= {n.split('/')[0] for n in f.namelist()}
+    sp = {Path(p) for p in [*site.getsitepackages(), sysconfig.get_path('platlib'), sysconfig.get_path('purelib')]}
+    roots = [Path(sysconfig.get_path('stdlib'))/'lib-dynload', *(d/n for d in sp for n in sorted(pkgs) if (d/n).is_dir()), *map(Path, search)]
+    out = {}
+    def add(f):
+        if not (ns := {f.name, *([f.resolve().name] if f.is_symlink() else [])} & names) or not is_macho(f): return
+        for n in ns: out.setdefault(n, set()).add(f.resolve())
+    for f in (x for r in roots for x in ([r] if r.is_file() else r.rglob('*'))):
+        if f.is_symlink() or not f.is_file(): continue
+        add(f)
+        if f.suffix not in ('.so', '.dylib'): continue
+        for s in macho(f) or []:
+            for d in _resolve(f, s):
+                if d.is_file(): add(d)
+    return {n: sorted(ps) for n, ps in out.items()}
+
+def _install(src, dest, fw):
+    "Copy `src` over `dest`, then point its install name and dependencies into `fw`."
+    dest.unlink(); shutil.copyfile(src, dest); dest.chmod(0o755)
+    args = ['-id', f'@executable_path/../Frameworks/{dest.relative_to(fw)}']
+    for d in sorted({d for s in macho(dest) for d in s['deps']}):
+        if not d.startswith('@executable_path') and (fw/Path(d).name).is_file(): args += ['-change', d, f'@executable_path/../Frameworks/{Path(d).name}']
+    subprocess.run(['install_name_tool', *args, dest], check=True, capture_output=True)
+    if shutil.which('codesign'): subprocess.run(['codesign', '--force', '-s', '-', dest], check=True, capture_output=True)
+
+def mend_frameworks(app, search=()):
+    "Replace each corrupt library in `Contents/Frameworks` with a clean installed copy; report basenames two sources share."
+    fw = Path(app)/'Contents'/'Frameworks'
+    libs = [f for f in fw.rglob('*') if f.is_file() and not f.is_symlink() and is_macho(f)] if fw.is_dir() else []
+    src = _sources(app, {f.name for f in libs}, search)
+    clashes = {n: list(map(str, ps)) for n, ps in src.items() if len({tuple(s['uuid'] for s in macho(p)) for p in ps}) > 1}
+    mended = {}
+    for f in filter(corrupt, libs):
+        size = f.stat().st_size
+        ok = [p for p in src.get(f.name, []) if not corrupt(p)]
+        best = max(ok, key=lambda p: (p.stat().st_size == size, max(s['version'] for s in macho(p))), default=None)
+        if best: _install(best, f, fw)
+        mended[f.name] = best and str(best)
+    return dict(mended=mended, clashes=clashes)
+
+# %% ../nbs/02_bundle.ipynb #a69856ea
+def _run(*args): return subprocess.run([str(a) for a in args], check=True)
+
+def sign(app, identity, entitlements=None, run=None):
+    "Sign each Mach-O inode deepest first, then each framework, then the bundle, keeping hardlinks; never `--deep`."
+    app, run = Path(app), run or _run
+    hard = ('codesign', '--force', '--options', 'runtime', '--timestamp=none' if identity == '-' else '--timestamp')
+    ent = lambda on: ['--entitlements', entitlements] if on and entitlements else []
+    main = app/'Contents'/'MacOS'/app.stem
+    files = sorted((p for p in app.rglob('*') if p.is_file() and not p.is_symlink() and p != main and is_macho(p)),
+                   key=lambda p: (-len(p.parts), str(p)))
+    inodes = {}
+    for p in files: inodes.setdefault(os.stat(p).st_ino, []).append(p)
+    for p, *same in inodes.values():
+        run(*hard, *ent(p.stat().st_mode & 0o111 and p.suffix not in ('.so', '.dylib')), '--sign', identity, p)
+        for q in same:
+            if os.stat(q).st_ino != os.stat(p).st_ino: q.unlink(); os.link(p, q)
+    for p in sorted((p for p in app.rglob('*.framework') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
+        run(*hard, '--sign', identity, p)
+    run(*hard, *ent(True), '--sign', identity, app)
+    run('codesign', '--verify', '--deep', '--strict', '--verbose=2', app)
+
 # %% ../nbs/02_bundle.ipynb #4f455d17
 def finish(app, spec, identity=None):
     "Everything a bundle needs after the freezer wrote it, in the order it needs it."
@@ -88,6 +218,7 @@ def finish(app, spec, identity=None):
     dropped = [*spec.unreachable, *[f'{n}/' for n in spec.grafted]]
     out['stripped_mb'] = strip_zip(app, dropped)
     out['linked_mb'] = link_duplicates(app, spec.grafted)
+    out.update(mend_frameworks(app))
     out['modern_icon'] = bool(install_modern_icon(app, spec.modern_icon, identity))
     return out
 

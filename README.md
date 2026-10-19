@@ -55,7 +55,7 @@ from kavacha import finish
 finish(bundle, app)
 ```
 
-[`finish`](https://vedicreader.github.io/kavacha/bundle.html#finish) grafts archive-incompatible packages, removes unreachable archive copies, links duplicate files, and installs the modern icon before signing.
+[`finish`](https://vedicreader.github.io/kavacha/bundle.html#finish) grafts archive-incompatible packages, removes unreachable archive copies, links duplicate files, mends Frameworks libraries two sources share a basename for, and installs the modern icon before signing.
 
 ## Icons
 
