@@ -5,9 +5,9 @@ from __future__ import annotations
 
 # %% auto #0
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
-           'DOCK_RECENT', 'NO_SUBSTITUTION', 'WINDOW_KW', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app', 'errstr',
-           'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'splash',
-           'dock_menu', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
+           'DOCK_RECENT', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app',
+           'errstr', 'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size',
+           'splash', 'dock_menu', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
            'shell_api', 'make_window', 'off_main_thread', 'open_window', 'run_shell', 'menus', 'watch_open_events',
            'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch']
 
@@ -223,31 +223,83 @@ def _dock_delegates():
     return _delegates
 
 # %% ../nbs/04_window.ipynb #dd499ca0
-def quit_cleanly(timeout=15, run_exit=None):
-    "Stop this process's multiprocessing children, then run its atexit handlers, which a Cocoa quit's C `exit()` skips."
-    import atexit, multiprocessing as mp
+#: Set once a quit begins, so a host's background work can tell being reaped from failing.
+quitting = threading.Event()
+
+def _reap(grace=1.):
+    "Terminate this process's multiprocessing children, give them one shared `grace` seconds, then kill the rest."
+    import multiprocessing as mp
     kids = mp.active_children()
-    for p in kids: p.terminate()
-    for p in kids:
-        p.join(2)
-        if p.is_alive(): p.kill(); p.join(1)
+    def each(f):
+        for p in kids:
+            try: f(p)
+            except (OSError, ValueError, AssertionError): pass
+    each(lambda p: p.terminate())
+    end = time.time() + grace
+    each(lambda p: p.join(max(0, end - time.time())))
+    each(lambda p: p.is_alive() and (p.kill(), p.join(max(0, end + 1 - time.time()))))
+    return kids
+
+def _let_sigterm_kill():
+    "A second SIGTERM must kill a quit that hangs, so the no-op handler and the wakeup socket go."
+    import signal
+    if threading.current_thread() is not threading.main_thread(): return
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    signal.set_wakeup_fd(-1)
+
+def quit_cleanly(timeout=15, run_exit=None, grace=1.):
+    "Stop this process's multiprocessing children, then run its atexit handlers, which a Cocoa quit's C `exit()` skips."
+    import atexit
+    quitting.set()
+    n = 0
+    for step in (_let_sigterm_kill, lambda: _reap(grace)):
+        # Each step on its own: an exception in `applicationWillTerminate_` skips the rest of the quit.
+        try: n += len(step() or ())
+        except Exception as e: print(f'  quit: {errstr(e)}')
     # On a thread, so a handler that hangs cannot hold the quit past `timeout`.
     t = threading.Thread(target=run_exit or atexit._run_exitfuncs, daemon=True, name='kavacha-quit')
     t.start(); t.join(timeout)
-    return len(kids)
+    # Again: a thread still running may have forked a pool meanwhile, and C `exit()` would orphan it.
+    try: n += len(_reap(grace))
+    except Exception as e: print(f'  quit: {errstr(e)}')
+    return n
 
 _sigterm = None
+
+def _die_with(ppid, every=1.):
+    "Exit once the parent is gone. A Force Quit or a crash leaves nobody to reap a forked worker."
+    while os.getppid() == ppid: time.sleep(every)
+    os._exit(1)
+
+def _unhook():
+    "In any forked child: SIGTERM kills again and the parent's wakeup socket is let go. Async-safe work only."
+    global _sigterm
+    import signal
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    signal.set_wakeup_fd(-1)
+    for s in _sigterm or (): s.close()
+    _sigterm = None
+
+def _watch_parent(_):
+    "In a multiprocessing child only: die with the parent. A deliberately detached fork is left alone."
+    import multiprocessing as mp
+    if (p := mp.parent_process()) is not None:
+        threading.Thread(target=_die_with, args=(p.pid,), daemon=True, name='kavacha-orphan').start()
 
 def quit_on_sigterm():
     "Make SIGTERM quit through Cocoa, so `applicationWillTerminate_` cleans up as Cmd+Q does. macOS, main thread."
     global _sigterm
     import signal, socket
+    from multiprocessing.util import register_after_fork
     if sys.platform != 'darwin' or _sigterm or threading.current_thread() is not threading.main_thread(): return _sigterm
     r, w = _sigterm = socket.socketpair()
     w.setblocking(False)
     # The handler never runs while AppKit owns the main thread; the wakeup byte reaches the reader anyway.
     signal.signal(signal.SIGTERM, lambda *_: None)
     signal.set_wakeup_fd(w.fileno(), warn_on_full_buffer=False)
+    # Forked children inherit both, and would ignore `terminate()` and wake this reader with their own SIGTERM.
+    os.register_at_fork(after_in_child=_unhook)
+    register_after_fork(_watch_parent, _watch_parent)
     def wait():
         while signal.SIGTERM not in (got := r.recv(64)):
             if not got: return
