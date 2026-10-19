@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.5
+
+- A forked child gets the default SIGTERM back and drops the parent's wakeup socket, so stopping a worker works and cannot quit the app.
+- A multiprocessing child exits when its parent dies, so a Force Quit no longer leaves idle workers behind.
+- `quit_cleanly` terminates every child, waits one shared second, kills the rest, and reaps again after the atexit handlers; it sets `quitting` first. A quit with 14 workers takes 0.07 s, where it took 28 s.
+- `dev` is an extra, so CI and the docs build install Pillow. The Linux `menus` test passes the arguments `menus` now takes.
+
 ## 0.0.4
 
 - `graft` byte-compiles the grafted package as unchecked-hash `.pyc`, so importing it never writes into a signed bundle.

@@ -23,6 +23,7 @@ window = ["pywebview>=5.3",
           "pythonnet>=3.0.3; sys_platform == 'win32'"]
 icons = ['pillow>=10.0']
 macapp = ["kavacha[window,icons]", "py2app>=0.28.8; sys_platform == 'darwin'"]
+dev = ['pytest>=8.0.0', 'nbdev>=2.4.6', 'pillow>=10.0']
 windows = ["kavacha[window,icons]", "py2exe>=0.14.2; sys_platform == 'win32'"]
 
 [project.urls]
@@ -48,5 +49,6 @@ include = ["/kavacha", "/README.md", "/pyproject.toml"]
 
 [tool.hatch.version]
 path = "kavacha/__init__.py"
+# CI and the docs build install `.[dev]`; the group points at the extra so `uv sync` keeps working.
 [dependency-groups]
-dev = ['pytest>=8.0.0', 'nbdev>=2.4.6', 'pillow>=10.0']
+dev = ["kavacha[dev]"]
