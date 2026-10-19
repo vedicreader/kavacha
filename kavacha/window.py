@@ -7,9 +7,9 @@ from __future__ import annotations
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
            'DOCK_RECENT', 'NO_SUBSTITUTION', 'WINDOW_KW', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app', 'errstr',
            'ShellApi', 'backend', 'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'splash',
-           'dock_menu', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api', 'make_window',
-           'off_main_thread', 'open_window', 'run_shell', 'menus', 'watch_open_events', 'mac_key', 'menu_chord',
-           'menu_bar', 'eval_js', 'install_menu_patch']
+           'dock_menu', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
+           'shell_api', 'make_window', 'off_main_thread', 'open_window', 'run_shell', 'menus', 'watch_open_events',
+           'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, sys, threading, time
@@ -215,11 +215,47 @@ def _dock_delegates():
         def applicationShouldHandleReopen_hasVisibleWindows_(self, app, visible):
             if not visible and _hidden: _hidden.pop().makeKeyAndOrderFront_(None)
             return YES
+        def applicationWillTerminate_(self, note): quit_cleanly()
         def applicationDockMenu_(self, app):
             try: return dock_menu(_on_folder, _on_recent() if _on_recent else None)
             except Exception as e: print(f'  dock menu: {errstr(e)}'); return None
     _delegates = (Windows, App)
     return _delegates
+
+# %% ../nbs/04_window.ipynb #dd499ca0
+def quit_cleanly(timeout=15, run_exit=None):
+    "Stop this process's multiprocessing children, then run its atexit handlers, which a Cocoa quit's C `exit()` skips."
+    import atexit, multiprocessing as mp
+    kids = mp.active_children()
+    for p in kids: p.terminate()
+    for p in kids:
+        p.join(2)
+        if p.is_alive(): p.kill(); p.join(1)
+    # On a thread, so a handler that hangs cannot hold the quit past `timeout`.
+    t = threading.Thread(target=run_exit or atexit._run_exitfuncs, daemon=True, name='kavacha-quit')
+    t.start(); t.join(timeout)
+    return len(kids)
+
+_sigterm = None
+
+def quit_on_sigterm():
+    "Make SIGTERM quit through Cocoa, so `applicationWillTerminate_` cleans up as Cmd+Q does. macOS, main thread."
+    global _sigterm
+    import signal, socket
+    if sys.platform != 'darwin' or _sigterm or threading.current_thread() is not threading.main_thread(): return _sigterm
+    r, w = _sigterm = socket.socketpair()
+    w.setblocking(False)
+    # The handler never runs while AppKit owns the main thread; the wakeup byte reaches the reader anyway.
+    signal.signal(signal.SIGTERM, lambda *_: None)
+    signal.set_wakeup_fd(w.fileno(), warn_on_full_buffer=False)
+    def wait():
+        while signal.SIGTERM not in (got := r.recv(64)):
+            if not got: return
+        from AppKit import NSApplication
+        from PyObjCTools.AppHelper import callAfter
+        callAfter(NSApplication.sharedApplication().terminate_, None)
+    threading.Thread(target=wait, daemon=True, name='kavacha-sigterm').start()
+    return _sigterm
 
 # %% ../nbs/04_window.ipynb #b48c51bb
 NO_SUBSTITUTION = ('NSAutomaticQuoteSubstitutionEnabled', 'NSAutomaticDashSubstitutionEnabled',
@@ -320,6 +356,7 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
     if sys.platform == 'darwin':
         quiet_text_substitution()
         keep_running_in_dock(open_folder, on_recent)
+        quit_on_sigterm()
     windows = [make_window(t, size) for t in titles]
     for key, window in zip(keys, windows):
         if key: _windows[key] = window

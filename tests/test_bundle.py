@@ -35,7 +35,18 @@ def test_the_flattened_extension_module_is_removed_before_the_real_one_lands(tmp
     (lib/'fastcore.cpython-312-darwin.so').write_text('the flattened one')
     graft(app, 'fastcore')
     assert not list(lib.glob('fastcore.*so')) and (lib/'fastcore'/'__init__.py').exists()
-    assert not list((lib/'fastcore').rglob('__pycache__')), 'and no bytecode came with it'
+
+def test_a_grafted_package_is_compiled_and_importing_it_writes_nothing(tmp_path):
+    """A signed bundle that writes `__pycache__` on first import no longer verifies."""
+    app, lib = mkapp(tmp_path)
+    graft(app, 'json')
+    pys, pycs = list((lib/'json').rglob('*.py')), list((lib/'json').rglob('*.pyc'))
+    assert len(pycs) == len(pys), 'one compiled file per source'
+    assert {int.from_bytes(f.read_bytes()[4:8], 'little') for f in pycs} == {1}, 'hash-based, the source never checked'
+    before = {f: f.stat().st_mtime_ns for f in lib.rglob('*')}
+    src = f"import sys; sys.dont_write_bytecode = False; sys.path.insert(0, {str(lib)!r}); import json.decoder, json.tool; assert json.__file__.startswith({str(lib)!r})"
+    subprocess.run([sys.executable, '-I', '-c', src], check=True)
+    assert {f: f.stat().st_mtime_ns for f in lib.rglob('*')} == before
 
 def test_stripping_drops_only_the_prefixes_it_was_given(tmp_path):
     app, lib = mkapp(tmp_path)

@@ -2,7 +2,7 @@
 
 # %% ../nbs/02_bundle.ipynb #4767bcd3
 from __future__ import annotations
-import hashlib, os, shutil, struct, subprocess, sys, zipfile
+import compileall, hashlib, os, py_compile, shutil, struct, subprocess, sys, zipfile
 from fastcore.all import Path, first
 
 # %% auto #0
@@ -24,6 +24,9 @@ def graft(app, name, python=None):
     for stray in lib.glob(f'{name}.*'): stray.unlink()
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(src, dest, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+    # Unchecked-hash bytecode: a signed bundle is read-only, so an import that found none would write it.
+    if (python or sys.version_info[:2]) == sys.version_info[:2]:
+        compileall.compile_dir(dest, quiet=2, invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
     return dest.relative_to(app)
 
 def _lib_dir(app):
