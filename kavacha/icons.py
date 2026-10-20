@@ -45,7 +45,7 @@ def icns(src, out, keep_iconset=False):
     folder = out.with_suffix('.iconset')
     iconset(src, folder)
     try: subprocess.run(['iconutil', '-c', 'icns', str(folder), '-o', str(out)], check=True,
-                        capture_output=True)
+                        capture_output=True, stdin=subprocess.DEVNULL)
     except FileNotFoundError as e:
         raise RuntimeError('an .icns is built by `iconutil`, which only macOS has') from e
     finally:

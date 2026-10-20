@@ -42,7 +42,7 @@ def shell_ready(platform=None):
 def py_version(python):
     "The `(major, minor)` of `python`, or None when it will not say."
     try: out = subprocess.run([str(python), '-c', 'import sys;print(*sys.version_info[:2])'],
-                              capture_output=True, text=True, timeout=30)
+                              capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError): return None
     try: return tuple(int(n) for n in out.stdout.split()) or None
     except ValueError: return None
@@ -53,7 +53,7 @@ def is_framework(python=None):
     probe = ('import json,sysconfig,sys;'
              "print(json.dumps([sysconfig.get_config_var('PYTHONFRAMEWORK') or '', "
              'list(sys.version_info[:2])]))')
-    try: out = subprocess.run([str(python), '-c', probe], capture_output=True, text=True, timeout=30)
+    try: out = subprocess.run([str(python), '-c', probe], capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError): return False
     if out.returncode: return False
     try: name, version = json.loads(out.stdout.strip() or 'null')
@@ -82,7 +82,7 @@ def running_from(bundle, ps_output=None):
     target = str(Path(bundle).resolve())
     if ps_output is None:
         try: ps_output = subprocess.run(['ps', '-Ao', 'pid,command'], capture_output=True,
-                                        text=True, timeout=10).stdout
+                                        text=True, timeout=10, stdin=subprocess.DEVNULL).stdout
         except (OSError, subprocess.SubprocessError): return []
     pids = []
     for line in ps_output.splitlines()[1:]:

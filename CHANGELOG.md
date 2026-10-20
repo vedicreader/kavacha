@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.8
+
+- The interpreter probes, `uv export`, `git`, `iconutil`, `install_name_tool` and `codesign` calls get `/dev/null` as stdin, so a child can neither read the terminal it was started from nor leave it non-blocking. `run`, which a developer watches in the foreground, still shares it.
+
 ## 0.0.7
 
 - `ShellApi.set_background` lets a page with themes give the native window its background, as `window.pywebview.api.set_background('#rrggbb')`. Every open window repaints on macOS, including what WebKit draws past the page during a resize, and later windows open on the colour. Anything but `#rrggbb` is refused.

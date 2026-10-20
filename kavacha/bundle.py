@@ -173,8 +173,8 @@ def _install(src, dest, fw):
     args = ['-id', f'@executable_path/../Frameworks/{dest.relative_to(fw)}']
     for d in sorted({d for s in macho(dest) for d in s['deps']}):
         if not d.startswith('@executable_path') and (fw/Path(d).name).is_file(): args += ['-change', d, f'@executable_path/../Frameworks/{Path(d).name}']
-    subprocess.run(['install_name_tool', *args, dest], check=True, capture_output=True)
-    if shutil.which('codesign'): subprocess.run(['codesign', '--force', '-s', '-', dest], check=True, capture_output=True)
+    subprocess.run(['install_name_tool', *args, dest], check=True, capture_output=True, stdin=subprocess.DEVNULL)
+    if shutil.which('codesign'): subprocess.run(['codesign', '--force', '-s', '-', dest], check=True, capture_output=True, stdin=subprocess.DEVNULL)
 
 def mend_frameworks(app, search=()):
     "Replace each corrupt library in `Contents/Frameworks` with a healthy installed copy, and report file names with more than one build installed."

@@ -28,7 +28,7 @@ def lock_requirements(root, extras=(), out=None):
     args = ['uv', 'export', '--frozen', '--no-dev', '--no-hashes', '--no-emit-project',
             '--format', 'requirements-txt']
     for e in extras: args += ['--extra', e]
-    try: got = subprocess.run(args, cwd=str(root), capture_output=True, text=True, timeout=300)
+    try: got = subprocess.run(args, cwd=str(root), capture_output=True, text=True, timeout=300, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError): return None
     if got.returncode or not got.stdout.strip():
         print(f'· uv export failed; resolving from pyproject instead: {got.stderr.strip()[:200]}')
@@ -62,7 +62,7 @@ def build_venv(python, venv, root, extras=(), force=False):
 def git_stamp(root, version=''):
     "Return the commit, dirty flag, version and build time for the checkout at `root`, or `None` outside one."
     def git(*a):
-        r = subprocess.run(['git', *a], cwd=str(root), capture_output=True, text=True, timeout=30)
+        r = subprocess.run(['git', *a], cwd=str(root), capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL)
         return r.stdout.strip() if not r.returncode else None
     try: sha = git('rev-parse', 'HEAD')
     except (OSError, subprocess.SubprocessError): return None
