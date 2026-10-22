@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.9
+
+- A file Finder opens, by double-click or Open With, reaches the app through `run_shell(on_open_file=...)`, warm or cold. Before, only folders got through and a file was dropped. The `App` delegate answers `application:openFiles:` and replies success or failure; the raw `odoc` handler also passes files. `open_paths` sends each path to the folder or file callback once within `OPEN_TTL` seconds, so the two routes never deliver one open twice.
+- `open_window` brings the app forward, and a reused window hidden to the Dock is shown again, through `bring_forward`.
+
 ## 0.0.8
 
 - The interpreter probes, `uv export`, `git`, `iconutil`, `install_name_tool` and `codesign` calls get `/dev/null` as stdin, so a child can neither read the terminal it was started from nor leave it non-blocking. `run`, which a developer watches in the foreground, still shares it.

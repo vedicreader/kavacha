@@ -5,13 +5,13 @@ from __future__ import annotations
 
 # %% auto #0
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
-           'DOCK_RECENT', 'hidden_windows', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'CMD', 'CTRL',
-           'ALT', 'SHIFT', 'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'backend', 'shell_ready',
-           'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu', 'dock_delegates',
-           'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api',
-           'system_dark', 'window_background', 'make_window', 'off_main_thread', 'open_window', 'run_shell', 'menus',
-           'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'OpenHandler',
-           'RecentTarget']
+           'DOCK_RECENT', 'hidden_windows', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'OPEN_TTL',
+           'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'backend',
+           'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu',
+           'dock_delegates', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
+           'shell_api', 'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward',
+           'open_window', 'run_shell', 'menus', 'open_paths', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar',
+           'eval_js', 'install_menu_patch', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -80,7 +80,7 @@ def paint_background(window, colour):
 # %% ../nbs/04_window.ipynb #747b2cb6
 class ShellApi:
     "What the page may ask the native window for, as `window.pywebview.api.*`."
-    on_open_folder = None
+    on_open_folder = on_open_file = None
     def open_folder(self, path):
         "Ask the host to open `path` in a window of its own, and return whether a host callback took it."
         if not path or self.on_open_folder is None: return False
@@ -243,6 +243,7 @@ def dock_delegates():
     "The two delegate subclasses. Built once: an Objective-C class name is global to the runtime."
     global _delegates
     if _delegates is not None: return _delegates
+    from AppKit import NSApplicationDelegateReplyFailure, NSApplicationDelegateReplySuccess
     from Foundation import NO, YES
     from webview.platforms.cocoa import BrowserView
     class Windows(BrowserView.WindowDelegate):
@@ -255,6 +256,11 @@ def dock_delegates():
         def applicationShouldHandleReopen_hasVisibleWindows_(self, app, visible):
             if not visible and hidden_windows: hidden_windows.pop().makeKeyAndOrderFront_(None)
             return YES
+        def application_openFiles_(self, app, paths):
+            ok = open_paths(paths, shell_api().on_open_folder, shell_api().on_open_file)
+            app.replyToOpenOrPrint_(NSApplicationDelegateReplySuccess if ok else NSApplicationDelegateReplyFailure)
+        def application_openFile_(self, app, path):
+            return open_paths([path], shell_api().on_open_folder, shell_api().on_open_file)
         def applicationWillTerminate_(self, note): quit_cleanly()
         def applicationDockMenu_(self, app):
             try: return dock_menu(_on_folder, _on_recent() if _on_recent else None)
@@ -432,9 +438,22 @@ def off_main_thread(fn, name='kavacha-shell'):
     return go
 
 # %% ../nbs/04_window.ipynb #926fb8b5
+def bring_forward():
+    "Activate the app, and drop the hidden-window entries whose window is on screen again. macOS only."
+    if sys.platform != 'darwin': return
+    try:
+        from AppKit import NSApp
+        from PyObjCTools.AppHelper import callAfter
+    except ImportError: return
+    def go():
+        NSApp.activateIgnoringOtherApps_(True)
+        hidden_windows[:] = [w for w in hidden_windows if not w.isVisible()]
+    callAfter(go)
+
 def open_window(url, title=None, key=None, url_wait=90):
     "A window on `url`, raised rather than opened twice when `key` already has one."
     title = title or APP_NAME
+    bring_forward()
     if key and (window := keyed_windows.get(key)) is not None:
         try: window.show()
         except Exception as e: print(f'  could not raise the window for {title}: {errstr(e)}')
@@ -452,7 +471,8 @@ def _point(window, url, url_wait=90):
 
 # %% ../nbs/04_window.ipynb #022366f0
 def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_ready=None,
-              on_open_folder=None, keys=(), bar=(), lookup=None, on_action=None, on_recent=None, background=None):
+              on_open_folder=None, keys=(), bar=(), lookup=None, on_action=None, on_recent=None, background=None,
+              on_open_file=None):
     "Open one native window per workspace URL and block until they close."
     ok, why = shell_ready()
     if not ok: raise RuntimeError(why)
@@ -462,7 +482,8 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
     titles = list(titles) + [''] * (len(urls) - len(titles))
     keys = list(keys) + [None] * (len(urls) - len(keys))
     open_folder = off_main_thread(on_open_folder, 'kavacha-open-folder') if on_open_folder else None
-    shell_api().on_open_folder = open_folder
+    open_file = off_main_thread(on_open_file, 'kavacha-open-file') if on_open_file else None
+    shell_api().on_open_folder, shell_api().on_open_file = open_folder, open_file
     if background is not None: shell_api().set_background(window_background(background))
     if sys.platform == 'darwin':
         quiet_text_substitution()
@@ -471,7 +492,7 @@ def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_r
     windows = [make_window(t, size) for t in titles]
     for key, window in zip(keys, windows):
         if key: keyed_windows[key] = window
-    if open_folder is not None: watch_open_events(open_folder)
+    if open_folder or open_file: watch_open_events(open_folder, open_file)
     def load(*_):
         "Once the GUI loop is up: wait for the server, then point each window at it."
         for window, url in zip(windows, urls): _point(window, url, url_wait)
@@ -496,8 +517,25 @@ def menus(bar, lookup, on_action, run=None):
         print(f'  no menu bar: {errstr(e)}')
         return []
 
+# %% ../nbs/04_window.ipynb #fc2b4f1d
+OPEN_TTL = 2.
+_seen = {}
+
+def open_paths(paths, on_folder=None, on_file=None):
+    "Deliver each path in `paths` once to `on_folder` or `on_file`. False if one had no callback."
+    now = time.monotonic()
+    for p in [p for p, t in _seen.items() if now - t > OPEN_TTL]: del _seen[p]
+    ok = True
+    for p in map(str, paths):
+        cb = on_folder if os.path.isdir(p) else on_file
+        if cb is None: ok = False
+        elif p not in _seen:
+            _seen[p] = now
+            cb(p)
+    return ok
+
 # %% ../nbs/04_window.ipynb #8d4390c0
-def watch_open_events(on_folder):
+def watch_open_events(on_folder=None, on_file=None):
     "Answer the `odoc` Apple Event Finder sends a running app. macOS only, best-effort."
     if sys.platform != 'darwin': return None
     try: from Foundation import NSAppleEventManager, NSURL
@@ -506,12 +544,14 @@ def watch_open_events(on_folder):
     def handle(event, _reply):
         try:
             items = event.paramDescriptorForKeyword_(code('----'))
+            paths = []
             for i in range(1, (items.numberOfItems() or 0) + 1):
                 url = items.descriptorAtIndex_(i).stringValue()
                 if not url: continue
                 p = NSURL.URLWithString_(url).path() if url.startswith('file:') else url
-                if p and os.path.isdir(str(p)): on_folder(str(p))
-        except Exception as e: print(f'  open-folder event: {errstr(e)}')
+                if p: paths.append(str(p))
+            open_paths(paths, on_folder, on_file)
+        except Exception as e: print(f'  open event: {errstr(e)}')
     try:
         mgr = NSAppleEventManager.sharedAppleEventManager()
         mgr.setEventHandler_andSelector_forEventClass_andEventID_(
@@ -519,7 +559,7 @@ def watch_open_events(on_folder):
             code('aevt'), code('odoc'))
         return handle
     except Exception as e:
-        print(f'  could not register the open-folder handler: {errstr(e)}')
+        print(f'  could not register the open handler: {errstr(e)}')
         return None
 
 # %% ../nbs/04_window.ipynb #43f5f496
