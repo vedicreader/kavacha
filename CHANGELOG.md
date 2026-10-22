@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.10
+
+- `App.build` sets `CFBundleVersion`, which Launch Services compares numerically to choose among copies of one app; `CFBundleShortVersionString` stays `version`. Before, both were `version`, so every local build of one release looked identical and macOS could open an old copy.
+
 ## 0.0.9
 
 - A file Finder opens, by double-click or Open With, reaches the app through `run_shell(on_open_file=...)`, warm or cold. Before, only folders got through and a file was dropped. The `App` delegate answers `application:openFiles:` and replies success or failure; the raw `odoc` handler also passes files. `open_paths` sends each path to the folder or file callback once within `OPEN_TTL` seconds, so the two routes never deliver one open twice.

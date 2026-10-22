@@ -37,6 +37,7 @@ class App:
     name: str
     entry: str                                  # the script the bundle runs
     version: str = '0.0.0'
+    build: str = ''                             # CFBundleVersion, which Launch Services compares numerically; `version` if unset
     icon: str = ''                              # an .icns/.ico; `kavacha.icons` makes one
     modern_icon: str = ''                       # a macOS 26 Icon Composer document
     identifier: str = ''                        # reverse-DNS bundle id; derived from `name` if unset
@@ -63,7 +64,7 @@ class App:
         base = {
             'CFBundleName': self.name, 'CFBundleDisplayName': self.name,
             'CFBundleIdentifier': self.identifier,
-            'CFBundleVersion': self.version, 'CFBundleShortVersionString': self.version,
+            'CFBundleVersion': self.build or self.version, 'CFBundleShortVersionString': self.version,
             'CFBundleGetInfoString': self.summary or self.name,
             'LSApplicationCategoryType': self.category,
             'LSMinimumSystemVersion': self.min_macos,
