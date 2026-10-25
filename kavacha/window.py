@@ -4,14 +4,15 @@
 from __future__ import annotations
 
 # %% auto #0
-__all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'SPLASH',
-           'DOCK_RECENT', 'hidden_windows', 'quitting', 'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'OPEN_TTL',
-           'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'backend',
-           'shell_ready', 'wait_for_http', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu',
-           'dock_delegates', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
-           'shell_api', 'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward',
-           'open_window', 'run_shell', 'menus', 'open_paths', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar',
-           'eval_js', 'install_menu_patch', 'OpenHandler', 'RecentTarget']
+__all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'CDP_PORT',
+           'HEADLESS_PORT', 'HEADLESS_PROFILE', 'SPLASH', 'DOCK_RECENT', 'hidden_windows', 'quitting',
+           'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'OPEN_TTL', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app',
+           'errstr', 'is_colour', 'paint_background', 'ShellApi', 'backend', 'shell_ready', 'wait_for_http',
+           'cdp_target', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu', 'dock_delegates',
+           'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api',
+           'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward', 'open_window',
+           'run_shell', 'menus', 'open_paths', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js',
+           'install_menu_patch', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -137,8 +138,18 @@ def wait_for_http(url, timeout=60, interval=.1):
     return False
 
 # %% ../nbs/04_window.ipynb #c3d0bac2
-def start_cdp(port=9223, headless=True, wait=False, timeout=None, profile=None):
+CDP_PORT = 9223                                                    #: the visible CDP Chrome's port, and fastcdp's
+HEADLESS_PORT = 9224                                               #: a headless Chrome's port
+HEADLESS_PROFILE = Path.home()/'.cache'/'kavacha'/'headless-chrome'  #: a headless Chrome's own user data folder
+
+def cdp_target(port=None, headless=True, profile=None):
+    "The `(port, profile)` a CDP Chrome starts on: a headless one never on the visible Chrome's port or profile."
+    if not headless: return port or CDP_PORT, profile
+    return (HEADLESS_PORT if port in (None, CDP_PORT) else port), str(profile or HEADLESS_PROFILE)
+
+def start_cdp(port=None, headless=True, wait=False, timeout=None, profile=None):
     "Start a Chrome controlled over CDP on a background thread, through fossick, and return the thread."
+    port, profile = cdp_target(port, headless, profile)
     def boot():
         try:
             from fossick.cdp import debug_ready, cdp_setup
@@ -152,7 +163,7 @@ def start_cdp(port=9223, headless=True, wait=False, timeout=None, profile=None):
     return t
 
 # %% ../nbs/04_window.ipynb #061ae319
-def warm_cdp(port=9223, profile=None):
+def warm_cdp(port=None, profile=None):
     "Start the CDP Chrome at launch, but only when the `EAGER_CDP` environment variable is 1, true or yes."
     if os.environ.get(EAGER_CDP, '').strip() not in ('1', 'true', 'yes'): return None
     return start_cdp(port, headless=True, profile=profile)
