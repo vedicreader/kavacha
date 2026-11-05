@@ -81,11 +81,11 @@ def paint_background(window, colour):
 # %% ../nbs/04_window.ipynb #747b2cb6
 class ShellApi:
     "What the page may ask the native window for, as `window.pywebview.api.*`."
-    on_open_folder = on_open_file = None
+    on_open_folder = on_open_file = on_page_folder = on_picked = None
     def open_folder(self, path):
         "Ask the host to open `path` in a window of its own, and return whether a host callback took it."
-        if not path or self.on_open_folder is None: return False
-        self.on_open_folder(str(path))
+        if not path or (f := self.on_page_folder or self.on_open_folder) is None: return False
+        f(str(path))
         return True
     def pick_folder(self):
         "The platform's own folder chooser. A path, or None if it was cancelled."
@@ -95,7 +95,9 @@ class ShellApi:
         except Exception as e:
             print(f'  folder dialog: {errstr(e)}')
             return None
-        return str(picked[0]) if picked else None
+        if not picked: return None
+        if self.on_picked: self.on_picked(str(picked[0]))
+        return str(picked[0])
     on_recent = None
     def recent(self):
         "Whatever the host offers as recent folders, or nothing."
