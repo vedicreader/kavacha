@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.11
+
+- `ShellApi.on_picked(paths)` runs after the person picks a folder in the native folder picker. A host uses it to grant that one folder, for a short time, without a second question.
+- `ShellApi.on_page_folder(path)` runs when page JavaScript asks to open a folder through the window's API. Before, the host could not tell such a call from a folder that the person dropped on the Dock, so the host trusted it. Now the host can ask the person first.
+
 ## 0.0.10
 
 - `App.build` sets `CFBundleVersion`, which Launch Services compares numerically to choose among copies of one app; `CFBundleShortVersionString` stays `version`. Before, both were `version`, so every local build of one release looked identical and macOS could open an old copy.
