@@ -89,6 +89,25 @@ def test_small_files_are_left_alone(tmp_path):
     assert link_duplicates(app, ['one', 'two'], floor=1_000_000) == 0
     assert os.stat(lib/'one'/'small').st_ino != os.stat(lib/'two'/'small').st_ino
 
+def test_an_unreachable_package_the_freezer_left_unzipped_is_deleted(tmp_path):
+    """py2app put `claude_agent_sdk` beside the zip, so stripping only the zip left its 206MB `claude` in Leela 0.1.21."""
+    app, lib = mkapp(tmp_path)
+    (lib/'claude_agent_sdk'/'_bundled').mkdir(parents=True)
+    (lib/'claude_agent_sdk'/'_bundled'/'claude').write_bytes(bytes(2_000_000)); (lib/'claude_agent_sdk'/'__init__.py').touch()
+    assert strip_zip(app, ('claude_agent_sdk/_bundled/',)) == 2
+    assert not (lib/'claude_agent_sdk'/'_bundled').exists() and (lib/'claude_agent_sdk'/'__init__.py').exists()
+    assert strip_zip(app, ('claude_agent_sdk/_bundled/',)) == 0
+
+def test_a_duplicate_driver_becomes_a_relative_symlink_the_zip_keeps(tmp_path):
+    """A zip has no hardlinks, so the two `node` drivers `link_duplicates` hardlinked unpacked as two 121MB files."""
+    app, lib = mkapp(tmp_path)
+    for n in ('playwright', 'patchright'): (lib/n/'driver').mkdir(parents=True)
+    (a := lib/'playwright'/'driver'/'node').write_bytes(b'n' * 2_000_000); a.chmod(0o755)
+    os.link(a, b := lib/'patchright'/'driver'/'node')
+    assert link_duplicates(app, ['playwright', 'patchright'], symlink=True) == 2
+    assert not a.is_symlink() and b.is_symlink() and os.readlink(b) == '../../playwright/driver/node'
+    assert os.access(b, os.X_OK) and b.read_bytes() == a.read_bytes()
+
 def test_a_running_bundle_is_found_by_its_executable_not_its_command_line(tmp_path):
     """The check itself names the bundle in its own arguments, and so does every grep, editor and
     shell that has the path in it."""
@@ -175,3 +194,25 @@ def test_signing_keeps_hardlinked_copies_one_file(tmp_path):
     sign(app, '-', run=lambda *a: subprocess.run([str(x) for x in a], check=True, capture_output=True))
     assert os.stat(lib/'one'/'node').st_ino == os.stat(lib/'two'/'node').st_ino
     subprocess.run(['codesign', '--verify', '--strict', lib/'two'/'node'], check=True)
+
+@needs_cc
+def test_a_bundle_with_a_symlinked_driver_signs_and_verifies_strictly(tmp_path):
+    """The symlinked `node` must pass `codesign --verify --deep --strict`, before and after a `ditto` zip round trip."""
+    app = tmp_path/'Demo.app'
+    (mac := app/'Contents'/'MacOS').mkdir(parents=True)
+    (app/'Contents'/'Info.plist').write_text('<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>'
+        '<key>CFBundleExecutable</key><string>Demo</string><key>CFBundleIdentifier</key><string>org.example.demo</string>'
+        '<key>CFBundlePackageType</key><string>APPL</string></dict></plist>')
+    (c := tmp_path/'m.c').write_text('int main(void){return 0;}')
+    subprocess.run(['cc', '-o', mac/'Demo', c], check=True)
+    _, lib = mkapp(tmp_path)
+    for n in ('playwright', 'patchright'): (lib/n/'driver').mkdir(parents=True)
+    shutil.copy(mac/'Demo', lib/'playwright'/'driver'/'node'); os.link(lib/'playwright'/'driver'/'node', lib/'patchright'/'driver'/'node')
+    link_duplicates(app, ['playwright', 'patchright'], floor=1, symlink=True)
+    sign(app, '-', run=lambda *a: subprocess.run([str(x) for x in a], check=True, capture_output=True))
+    if not shutil.which('ditto'): return
+    subprocess.run(['ditto', '-c', '-k', '--keepParent', app, z := tmp_path/'Demo.zip'], check=True)
+    subprocess.run(['ditto', '-x', '-k', z, out := tmp_path/'out'], check=True)
+    subprocess.run(['codesign', '--verify', '--deep', '--strict', out/'Demo.app'], check=True, capture_output=True)
+    node = out/'Demo.app'/lib.relative_to(app)/'patchright'/'driver'/'node'
+    assert node.is_symlink() and subprocess.run([node]).returncode == 0

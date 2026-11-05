@@ -37,8 +37,8 @@ def _lib_dir(app):
     raise SystemExit(f'{app} has no lib/python3.* to write into')
 
 # %% ../nbs/02_bundle.ipynb #f054e586
-def link_duplicates(app, names, floor=1_000_000):
-    "Hardlink identical files of at least `floor` bytes across the packages in `names`, and return the megabytes saved."
+def link_duplicates(app, names, floor=1_000_000, symlink=sys.platform == 'darwin'):
+    "Link identical files of at least `floor` bytes across the packages in `names` to the first copy, and return the megabytes saved."
     lib = _lib_dir(app)
     seen, saved = {}, 0
     for name in names:
@@ -46,17 +46,16 @@ def link_duplicates(app, names, floor=1_000_000):
             if not f.is_file() or f.is_symlink() or f.stat().st_size < floor: continue
             key = (f.stat().st_size, hashlib.sha256(f.read_bytes()).hexdigest())
             if (other := seen.get(key)) is None: seen[key] = f; continue
-            if os.stat(f).st_ino == os.stat(other).st_ino: continue
+            if not symlink and os.stat(f).st_ino == os.stat(other).st_ino: continue
             saved += f.stat().st_size
-            f.unlink(); os.link(other, f)
+            f.unlink()
+            if symlink: f.symlink_to(os.path.relpath(other, f.parent))
+            else: os.link(other, f)
     return round(saved / 1e6)
 
 # %% ../nbs/02_bundle.ipynb #9e0b3d82
-def strip_zip(app, prefixes=()):
-    "Delete the entries that start with any of `prefixes` from the bundle's zip archive, and return the megabytes saved."
-    z = first(sorted(_lib_dir(app).parent.glob('python3*.zip')))
-    if not z or not prefixes: return 0
-    prefixes = tuple(prefixes)
+def _drop_entries(z, prefixes):
+    "Rewrite the zip `z` without the entries that start with any of `prefixes`, and return the bytes saved."
     keep, dropped = [], 0
     with zipfile.ZipFile(z) as src:
         for info in src.infolist():
@@ -67,7 +66,19 @@ def strip_zip(app, prefixes=()):
     with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as out:
         for info, data in keep: out.writestr(info, data)
     tmp.replace(z)
-    return round(dropped / 1e6)
+    return dropped
+
+def _size(p): return sum(f.stat().st_size for f in [p, *p.rglob('*')] if f.is_file() and not f.is_symlink())
+
+def strip_zip(app, prefixes=()):
+    "Delete `prefixes` from the bundle's zip archive and from beside it, and return the megabytes saved."
+    lib, prefixes = _lib_dir(app), tuple(prefixes)
+    if not prefixes: return 0
+    loose = [p for x in prefixes if x.strip('/') and (p := lib/x.rstrip('/')).exists()]
+    saved = sum(map(_size, loose))
+    for p in loose: shutil.rmtree(p) if p.is_dir() and not p.is_symlink() else p.unlink()
+    if (z := first(sorted(lib.parent.glob('python3*.zip')))): saved += _drop_entries(z, prefixes)
+    return round(saved / 1e6)
 
 # %% ../nbs/02_bundle.ipynb #22fd45d1
 def install_modern_icon(app, icon, identity=None, deployment_target='14.0'):
@@ -217,9 +228,8 @@ def sign(app, identity, entitlements=None, run=None):
 def finish(app, spec, identity=None):
     "Run every repair a frozen bundle needs, in order, and return what each step did."
     out = {}
+    out['stripped_mb'] = strip_zip(app, [*spec.unreachable, *[f'{n}/' for n in spec.grafted]])
     for name in spec.grafted: out[name] = str(graft(app, name))
-    dropped = [*spec.unreachable, *[f'{n}/' for n in spec.grafted]]
-    out['stripped_mb'] = strip_zip(app, dropped)
     out['linked_mb'] = link_duplicates(app, spec.grafted)
     out.update(mend_frameworks(app))
     out['modern_icon'] = bool(install_modern_icon(app, spec.modern_icon, identity))

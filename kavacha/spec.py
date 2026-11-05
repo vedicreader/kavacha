@@ -46,7 +46,7 @@ class App:
     includes: list = field(default_factory=list)    # single modules the scanner cannot reach
     excludes: list = field(default_factory=list)    # on top of `DEFAULT_EXCLUDES`
     grafted: list = field(default_factory=list)     # copied in after the freezer runs, because they fail inside its zip
-    unreachable: list = field(default_factory=list) # zip archive path prefixes to delete, because nothing imports them
+    unreachable: list = field(default_factory=list) # path prefixes to delete, in the zip archive and beside it, because nothing imports them
     data: list = field(default_factory=list)        # `(dest_dir, [files])` pairs, as `tree` makes
     plist: dict = field(default_factory=dict)       # Info.plist entries that override the defaults in `info_plist`
     doc_types: list = field(default_factory=list)
