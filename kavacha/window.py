@@ -12,7 +12,7 @@ __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZ
            'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api',
            'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward', 'open_window',
            'run_shell', 'menus', 'open_paths', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js',
-           'install_menu_patch', 'OpenHandler', 'RecentTarget']
+           'install_menu_patch', 'menu_json', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -24,7 +24,7 @@ from fastcore.all import Path
 from fastcore.xdg import xdg_config_home
 
 # %% ../nbs/04_window.ipynb #b119a172
-from .menus import Binding, Js, MenuItem, Std
+from .menus import RESERVED, Binding, Js, MenuItem, Std
 
 # %% ../nbs/04_window.ipynb #ffbc16b0
 APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
@@ -617,27 +617,34 @@ _NAMED = {'up': '', 'down': '', 'left': '', 'right': '',
           'backspace': '\x08', 'escape': '\x1b'}
 
 # %% ../nbs/04_window.ipynb #accc4c25
+_US_SHIFT = dict(zip("`1234567890-=[]\\;',./", '~!@#$%^&*()_+{}|:"<>?'))
+
 def mac_key(chord):
     "`(keyEquivalent, modifierMask)` for one chord, or None when AppKit cannot spell it."
     parts = str(chord or '').split()[0].split('+') if chord else []
     if not parts or not parts[-1]: return None
-    mask, base = 0, parts[-1]
+    mask, shift, base = 0, False, parts[-1]
     for p in parts[:-1]:
-        if (m := _MODS.get(p.lower())) is None: return None
-        mask |= m
-    if len(base) == 1 and base.isupper(): mask |= SHIFT
-    base = _NAMED.get(base.lower(), base.lower())
+        if (m := _MODS.get(p.lower())) is None or p.lower() == 'hyper': return None
+        if m == SHIFT: shift = True
+        else: mask |= m
+    shift |= len(base) == 1 and base.isupper()
+    if (named := _NAMED.get(base.lower())) is not None: return named, mask | (SHIFT if shift else 0)
     if len(base) != 1: return None
-    return base, mask
+    b = base.lower()
+    if not shift: return b, mask
+    if b.isalpha(): return b.upper(), mask
+    return (_US_SHIFT[b], mask) if b in _US_SHIFT else (b, mask | SHIFT)
 
 # %% ../nbs/04_window.ipynb #73585946
 def menu_chord(action, lookup):
-    "Return the AppKit chord for `action` if it is bound, global and uses a modifier, else None."
+    "The AppKit chord for `action`: bound, with a modifier, not reserved, and global or the only scope with that chord."
     k = lookup(action)
-    if k is None or not k.bound or k.scope != 'global': return None
+    if k is None or not k.bound or (k.scope != 'global' and getattr(k, 'shared', True)): return None
     first = k.keys[0]
-    if not (set(first.split('+')[:-1]) & {'mod', 'cmd', 'ctrl', 'alt', 'opt', 'hyper'}): return None
-    return mac_key(first)
+    if not (set(first.split('+')[:-1]) & {'mod', 'cmd', 'ctrl', 'alt', 'opt'}): return None
+    if (got := mac_key(first)) is None or got in {mac_key(c) for c in RESERVED}: return None
+    return got
 
 # %% ../nbs/04_window.ipynb #a6757b5e
 def _title(row, lookup):
@@ -722,3 +729,15 @@ def _decorate(main, specs, lookup):
             else: got = menu_chord(spec.action, lookup)
             if got: item.setKeyEquivalent_(got[0]); item.setKeyEquivalentModifierMask_(got[1])
         if title == 'Window': AppKit.NSApp().setWindowsMenu_(sub)
+
+# %% ../nbs/04_window.ipynb #03b240d5
+def _bar_row(row, lookup):
+    if isinstance(row, MenuItem) and not row.action: return {'sep': True}
+    if isinstance(row, Js): return {'title': row.title, 'js': row.expr}
+    if isinstance(row, Std): out, k = {'title': row.title, 'selector': row.selector}, mac_key(f'{row.mods}+{row.key}') if row.key else None
+    else: out, k = {'title': _title(row, lookup), 'action': row.action}, menu_chord(row.action, lookup)
+    return out | (dict(key=k[0], mask=k[1]) if k else {})
+
+def menu_json(bar, lookup):
+    "`bar` as JSON-ready menus for a native launcher: rows with an action, a selector or JS, and the chord as AppKit spells it."
+    return [{'title': t, 'items': [_bar_row(r, lookup) for r in rows]} for t, rows in bar]

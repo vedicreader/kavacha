@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 # %% auto #0
-__all__ = ['MenuItem', 'Std', 'Js', 'Binding']
+__all__ = ['RESERVED', 'LAUNCHER_ROWS', 'MenuItem', 'Std', 'Js', 'Binding', 'chord_glyph']
 
 # %% ../nbs/06_menus.ipynb #1a54959d
 @dataclass(frozen=True)
@@ -36,9 +36,50 @@ class Js:
 # %% ../nbs/06_menus.ipynb #191bfb64
 @dataclass(frozen=True)
 class Binding:
-    "What a menu row reads from the host's keymap: the chords, the label, and where it applies."
+    "What a menu row reads from the host's keymap: the chords, the label, where it applies, and whether another scope binds its chord."
     keys: tuple = ()
     label: str = ''
     scope: str = 'global'
+    shared: bool = False
     @property
     def bound(self): return bool(self.keys)
+
+# %% ../nbs/06_menus.ipynb #80813491
+_AERO_HYPER = [*'123456789', 'tab', *'sqawhjklrftcd', 'space', *'`[]=-0', 'up', 'down', 'left', 'right']
+RESERVED = frozenset([*(f'hyper+{k}' for k in _AERO_HYPER),
+    *(f'ctrl+alt+shift+{k}' for k in [*'123456789', 'left', 'right']),
+    *(f'ctrl+alt+{k}' for k in [*'123456789', *'hjkl', 'up', 'down', 'left', 'right']),
+    'alt+shift+left', 'alt+shift+right', 'alt+shift+;', 'mod+ctrl+tab', 'mod+ctrl+`',
+    'ctrl+space', 'ctrl+up', 'ctrl+down', 'ctrl+left', 'ctrl+right', 'mod+space', 'mod+tab', 'mod+`',
+    'mod+q', 'mod+h', 'mod+alt+h', 'mod+m', 'mod+alt+d', 'mod+alt+escape', 'mod+shift+3', 'mod+shift+4',
+    'mod+shift+5', 'mod+ctrl+q', 'mod+ctrl+space', 'mod+ctrl+f'])
+
+# %% ../nbs/06_menus.ipynb #4b172724
+LAUNCHER_ROWS = (Std('Quit', 'terminate:', 'q'), Std('Hide', 'hide:', 'h'),
+                 Std('Hide Others', 'hideOtherApplications:', 'h', 'mod+alt'),
+                 Std('Close Window', 'performClose:', 'w', 'mod+shift'), Std('Undo', 'undo:', 'z'),
+                 Std('Redo', 'redo:', 'z', 'mod+shift'), Std('Minimize', 'performMiniaturize:', 'm'),
+                 Std('Enter Full Screen', 'toggleFullScreen:', 'f', 'mod+ctrl'))
+
+# %% ../nbs/06_menus.ipynb #8050cf2b
+_GLYPH = {'enter': '↩', 'return': '↩', 'backspace': '⌫', 'delete': '⌦', 'escape': '⎋', 'esc': '⎋', 'tab': '⇥',
+          'space': 'Space', 'up': '↑', 'down': '↓', 'left': '←', 'right': '→', 'pageup': '⇞', 'pagedown': '⇟',
+          'home': '↖', 'end': '↘'}
+_PC = {'enter': 'Enter', 'return': 'Enter', 'backspace': 'Backspace', 'delete': 'Delete', 'escape': 'Esc', 'esc': 'Esc',
+       'tab': 'Tab', 'space': 'Space', 'up': 'Up', 'down': 'Down', 'left': 'Left', 'right': 'Right',
+       'pageup': 'PageUp', 'pagedown': 'PageDown', 'home': 'Home', 'end': 'End'}
+_ALIAS = {'cmd': 'mod', 'opt': 'alt'}
+
+def _glyph(chord, mac):
+    *mods, base = chord.split('+') if not chord.endswith('++') else [*chord[:-2].split('+'), '+']
+    ms = {_ALIAS.get(m.lower(), m.lower()) for m in mods if m}
+    if 'hyper' in ms: ms = (ms - {'hyper'}) | {'mod', 'ctrl', 'alt', 'shift'}
+    if len(base) == 1 and base.isupper(): ms.add('shift')
+    b = base.lower()
+    if mac: return ''.join(g for m, g in (('ctrl', '⌃'), ('alt', '⌥'), ('shift', '⇧'), ('mod', '⌘')) if m in ms) + _GLYPH.get(b, b.upper())
+    names = [n for m, n in (('mod', 'Ctrl'), ('ctrl', 'Ctrl'), ('alt', 'Alt'), ('shift', 'Shift')) if m in ms]
+    return '+'.join([*dict.fromkeys(names), _PC.get(b, b.upper())])
+
+def chord_glyph(chord, mac=True):
+    "How `chord` is written for a person: ⌃⌥⇧⌘ and a capital on a Mac, `Ctrl+Shift+P` elsewhere."
+    return ' '.join(_glyph(c, mac) for c in str(chord or '').split())
