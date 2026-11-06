@@ -638,13 +638,13 @@ def mac_key(chord):
 
 # %% ../nbs/04_window.ipynb #73585946
 def menu_chord(action, lookup):
-    "The AppKit chord for `action`: bound, with a modifier, not reserved, and global or the only scope with that chord."
+    "The AppKit chord for `action`: its first chord with a modifier, not reserved, from a global binding or the only scope with that chord."
     k = lookup(action)
     if k is None or not k.bound or (k.scope != 'global' and getattr(k, 'shared', True)): return None
-    first = k.keys[0]
-    if not (set(first.split('+')[:-1]) & {'mod', 'cmd', 'ctrl', 'alt', 'opt'}): return None
-    if (got := mac_key(first)) is None or got in {mac_key(c) for c in RESERVED}: return None
-    return got
+    reserved = {mac_key(c) for c in RESERVED}
+    for c in k.keys:
+        if not (set(c.split('+')[:-1]) & {'mod', 'cmd', 'ctrl', 'alt', 'opt'}): continue
+        if (got := mac_key(c)) is not None and got not in reserved: return got
 
 # %% ../nbs/04_window.ipynb #a6757b5e
 def _title(row, lookup):
