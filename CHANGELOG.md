@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.14
+
+- `ShellApi.pick_path()` shows one chooser for a file or a folder, and `open_path(path)` opens a folder as `open_folder` does and a file as a Finder open does.
+- A file or folder dropped on the window from Finder opens as a Finder open (`dropped`, `arm_drops`). Drops the page handles itself (tabs, cells) stay the page's.
+- `exact_bar`: a menu row fires only when its chord matches exactly. Before, a row without Shift also caught Shift with keys such as Return, so ⌥⇧↩ ran ⌥↩'s row.
+- The page can no longer call `ShellApi`'s host callbacks (`on_…`). Before, a page script could call `pywebview.api.on_open_folder(path)` and open any folder with no question.
+
 ## 0.0.13
 
 - A menu key with Shift is written as the shifted character with no Shift flag, as AppKit expects: ⇧⌘P is `P` with ⌘, ⇧⌘/ is `?`. Before, 42 such rows never ran from the menu. Named keys (arrows, Return) keep the Shift flag.
