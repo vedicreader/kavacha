@@ -2,6 +2,16 @@
 
 <!-- do not remove -->
 
+## 0.0.13
+
+- A menu key with Shift is written as the shifted character with no Shift flag, as AppKit expects: ⇧⌘P is `P` with ⌘, ⇧⌘/ is `?`. Before, 42 such rows never ran from the menu. Named keys (arrows, Return) keep the Shift flag.
+- `mac_key` refuses Hyper chords, and `menu_chord` refuses `RESERVED` chords (macOS system chords and the window manager's). A scoped row shows its chord only when no other scope uses it, and the menu takes the first chord it may show.
+- New: `menu_json(bar, lookup)` builds the menu bar for any launcher, `LAUNCHER_ROWS` lists the rows a launcher adds (Quit, Hide, Close Window, Undo, Redo, Minimize, Full Screen), and `chord_glyph` writes a chord as ⌃⌥⇧⌘ glyphs on a Mac and as `Ctrl+Shift+P` elsewhere.
+
+## 0.0.12
+
+- `strip_zip` also deletes unreachable paths that sit unzipped beside the archive, and `link_duplicates` makes relative symlinks on macOS, so a zipped app keeps one copy of a duplicate driver.
+
 ## 0.0.11
 
 - `ShellApi.on_picked(paths)` runs after the person picks a folder in the native folder picker. A host uses it to grant that one folder, for a short time, without a second question.
