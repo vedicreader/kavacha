@@ -6,13 +6,14 @@ from __future__ import annotations
 # %% auto #0
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'CDP_PORT',
            'HEADLESS_PORT', 'HEADLESS_PROFILE', 'SPLASH', 'DOCK_RECENT', 'hidden_windows', 'quitting',
-           'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'OPEN_TTL', 'CMD', 'CTRL', 'ALT', 'SHIFT', 'use_app',
-           'errstr', 'is_colour', 'paint_background', 'ShellApi', 'backend', 'shell_ready', 'wait_for_http',
-           'cdp_target', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu', 'dock_delegates',
-           'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock', 'shell_api',
-           'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward', 'open_window',
-           'run_shell', 'menus', 'open_paths', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js',
-           'install_menu_patch', 'menu_json', 'OpenHandler', 'RecentTarget']
+           'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'OPEN_TTL', 'DROP_JS', 'CMD', 'CTRL', 'ALT', 'SHIFT',
+           'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'choose_path', 'backend', 'shell_ready',
+           'wait_for_http', 'cdp_target', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu',
+           'dock_delegates', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
+           'shell_api', 'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward',
+           'open_window', 'run_shell', 'menus', 'open_paths', 'take_dropped', 'arm_drops', 'watch_open_events',
+           'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'exact_bar', 'menu_json',
+           'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -82,22 +83,43 @@ def paint_background(window, colour):
 class ShellApi:
     "What the page may ask the native window for, as `window.pywebview.api.*`."
     on_open_folder = on_open_file = on_page_folder = on_picked = None
+    # pywebview gives the page every function `dir` lists, and a host's callbacks skip the questions the page must get.
+    def __dir__(self): return [n for n in super().__dir__() if not n.startswith('on_')]
     def open_folder(self, path):
         "Ask the host to open `path` in a window of its own, and return whether a host callback took it."
         if not path or (f := self.on_page_folder or self.on_open_folder) is None: return False
         f(str(path))
         return True
+    def open_path(self, path):
+        "Open a folder as `open_folder` does, and a file through `on_open_file` as Finder would. Whether a callback took it."
+        if not path: return False
+        if os.path.isdir(path): return self.open_folder(path)
+        if self.on_open_file is None: return False
+        self.on_open_file(str(path))
+        return True
+    def _pick(self, choose, what, folder=False):
+        import webview
+        if (window := webview.active_window()) is None: return None
+        try: picked = choose(window)
+        except Exception as e:
+            print(f'  {what} dialog: {errstr(e)}')
+            return None
+        if not picked: return None
+        p = str(picked[0])
+        if self.on_picked and (folder or os.path.isdir(p)): self.on_picked(p)
+        return p
     def pick_folder(self):
         "The platform's own folder chooser. A path, or None if it was cancelled."
         import webview
-        if (window := webview.active_window()) is None: return None
-        try: picked = window.create_file_dialog(webview.FileDialog.FOLDER)
-        except Exception as e:
-            print(f'  folder dialog: {errstr(e)}')
-            return None
-        if not picked: return None
-        if self.on_picked: self.on_picked(str(picked[0]))
-        return str(picked[0])
+        return self._pick(lambda w: w.create_file_dialog(webview.FileDialog.FOLDER), 'folder', True)
+    def pick_path(self):
+        "The platform's own chooser for a file or a folder. A path, or None if it was cancelled."
+        return self._pick(choose_path, 'file')
+    def dropped(self, names, take=True):
+        "Files dropped on the page from outside: with `take`, open them as Finder would. The paths it opened."
+        paths = take_dropped(names)
+        if take and paths: open_paths(paths, self.on_open_folder, self.on_open_file)
+        return paths if take else []
     on_recent = None
     def recent(self):
         "Whatever the host offers as recent folders, or nothing."
@@ -111,6 +133,26 @@ class ShellApi:
         except ImportError: return True
         for w in list(webview.windows): paint_background(w, colour)
         return True
+
+
+# %% ../nbs/04_window.ipynb #0bb0d3c3
+def choose_path(window):
+    "Paths from a chooser that takes one file or one folder: `NSOpenPanel` on macOS, pywebview's file dialog elsewhere."
+    import webview
+    if sys.platform != 'darwin': return window.create_file_dialog(webview.FileDialog.OPEN)
+    import AppKit
+    from PyObjCTools.AppHelper import callAfter
+    got, done = [], threading.Event()
+    def go():
+        try:
+            p = AppKit.NSOpenPanel.openPanel()
+            p.setCanChooseFiles_(True); p.setCanChooseDirectories_(True); p.setAllowsMultipleSelection_(False)
+            if p.runModal() == AppKit.NSModalResponseOK: got.extend(str(u.path()) for u in p.URLs())
+        finally: done.set()
+    if threading.current_thread() is threading.main_thread(): go()
+    else: callAfter(go); done.wait()
+    return got
+
 
 # %% ../nbs/04_window.ipynb #fd3e4208
 def backend(platform=None):
@@ -441,8 +483,11 @@ def make_window(title=None, size=None, background=None):
     w, h = size or window_size()
     bg = window_background(background)
     STORAGE.mkdir(parents=True, exist_ok=True)
-    return webview.create_window(title or APP_NAME, html=splash(title or APP_NAME, background=bg), width=w, height=h,
-                                 js_api=shell_api(), **{**WINDOW_KW, 'background_color': bg})
+    window = webview.create_window(title or APP_NAME, html=splash(title or APP_NAME, background=bg), width=w, height=h,
+                                   js_api=shell_api(), **{**WINDOW_KW, 'background_color': bg})
+    if sys.platform == 'darwin': window.events.loaded += arm_drops
+    return window
+
 
 # %% ../nbs/04_window.ipynb #48f7ad1a
 def off_main_thread(fn, name='kavacha-shell'):
@@ -546,6 +591,43 @@ def open_paths(paths, on_folder=None, on_file=None):
             _seen[p] = now
             cb(p)
     return ok
+
+# %% ../nbs/04_window.ipynb #44d0e034
+DROP_JS = r"""(() => {
+  if (window.__kavachaDrop) return; window.__kavachaDrop = true;
+  const files = e => [...(e.dataTransfer?.types || [])].includes('Files'), ours = new WeakSet();
+  addEventListener('dragover', e => { if (files(e) && !e.defaultPrevented) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+  addEventListener('drop', e => {
+    if (!files(e)) return;
+    const names = [...e.dataTransfer.files].map(f => f.name);
+    setTimeout(() => window.pywebview?.api?.dropped?.(names, ours.has(e)), 0);
+  }, true);
+  addEventListener('drop', e => { if (files(e) && !e.defaultPrevented) { e.preventDefault(); ours.add(e); } });
+})();"""
+
+def take_dropped(names):
+    "The full paths pywebview kept for the dropped files `names`, in order. It forgets the rest, so a later drop never gets a stale path."
+    from unicodedata import normalize
+    from urllib.parse import unquote
+    try: from webview.dom import _dnd_state
+    except ImportError: return []
+    nfc = lambda s: normalize('NFC', unquote(str(s)))
+    held, out = list(_dnd_state['paths']), []
+    for n in map(nfc, names or ()):
+        if (hit := next((h for h in held if nfc(h[0]) == n), None)) is None: continue
+        held.remove(hit)
+        out.append(unquote(hit[1]))
+    _dnd_state['paths'].clear()
+    return out
+
+def arm_drops(window):
+    "Make a file dropped on `window` from outside reach `ShellApi.dropped`, unless the page takes it first."
+    from webview.dom import _dnd_state
+    # pywebview's macOS view keeps a drop's full paths only while some drop listener is registered.
+    _dnd_state['num_listeners'] = max(1, _dnd_state['num_listeners'])
+    _dnd_state['paths'].clear()
+    window.run_js(DROP_JS)
+
 
 # %% ../nbs/04_window.ipynb #8d4390c0
 def watch_open_events(on_folder=None, on_file=None):
@@ -703,12 +785,15 @@ def install_menu_patch(specs, lookup):
     original = BrowserView._recreate_menus
     def recreate(self, user_menu):
         main = original(self, user_menu)
-        try: _decorate(main, specs, lookup)
+        try:
+            _decorate(main, specs, lookup)
+            main = exact_bar(main)
         except Exception as e: print(f'  menu bar: {errstr(e)}')
         return main
     BrowserView._recreate_menus = recreate
     _menu_patched = True
     return True
+
 
 # %% ../nbs/04_window.ipynb #e6ab65e8
 def _decorate(main, specs, lookup):
@@ -729,6 +814,35 @@ def _decorate(main, specs, lookup):
             else: got = menu_chord(spec.action, lookup)
             if got: item.setKeyEquivalent_(got[0]); item.setKeyEquivalentModifierMask_(got[1])
         if title == 'Window': AppKit.NSApp().setWindowsMenu_(sub)
+
+# %% ../nbs/04_window.ipynb #98e6dd45
+_ExactBar = None
+
+def exact_bar(main):
+    "A menu bar holding the rows of `main`, where a row fires only for its own chord."
+    global _ExactBar
+    import AppKit, objc
+    mods = AppKit.NSEventModifierFlagCommand | AppKit.NSEventModifierFlagOption | AppKit.NSEventModifierFlagControl | AppKit.NSEventModifierFlagShift
+    if _ExactBar is None:
+        class KavachaExactBar(AppKit.NSMenu):
+            def performKeyEquivalent_(self, e):
+                m, c = e.modifierFlags() & mods, e.charactersIgnoringModifiers()
+                if m & AppKit.NSEventModifierFlagShift and c and c.lower() == c.upper():
+                    for top in self.itemArray():
+                        if (sub := top.submenu()) is None: continue
+                        sub.update()
+                        for j, i in enumerate(sub.itemArray()):
+                            if i.isEnabled() and i.keyEquivalent() == c and i.keyEquivalentModifierMask() & mods == m:
+                                sub.performActionForItemAtIndex_(j)
+                                return True
+                return objc.super(KavachaExactBar, self).performKeyEquivalent_(e)
+        _ExactBar = KavachaExactBar
+    bar = _ExactBar.alloc().initWithTitle_(main.title())
+    for item in list(main.itemArray()):
+        main.removeItem_(item)
+        bar.addItem_(item)
+    return bar
+
 
 # %% ../nbs/04_window.ipynb #03b240d5
 def _bar_row(row, lookup):
