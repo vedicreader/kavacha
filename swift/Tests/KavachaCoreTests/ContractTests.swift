@@ -36,7 +36,8 @@ func fixture(_ name: String) -> Any { try! JSONSerialization.jsonObject(with: Da
             let a = c["action"] as! [String: Any], got = Bridge.route(c["body"]!)
             let want: BridgeAction = if let p = a["open_folder"] as? String { .openFolder(p) } else if a["pick_folder"] != nil { .pickFolder } else if a["pick_path"] != nil { .pickPath }
                 else if let p = a["open_path"] as? String { .openPath(p) } else if a["recent"] != nil { .recent } else if let b = a["set_background"] as? String { .setBackground(b) }
-                else if let t = a["set_title"] as? String { .setTitle(t, url: a["url"] as? String) } else { .unknown(a["unknown"] as! String) }
+                else if let t = a["set_title"] as? String { .setTitle(t, url: a["url"] as? String) } else if a["titlebar"] != nil { .titlebar }
+                else if let b = a["drag_region"] as? Bool { .dragRegion(b) } else { .unknown(a["unknown"] as! String) }
             #expect(got == want, "\(c["body"]!)")
         }
     }
@@ -128,7 +129,7 @@ func fixture(_ name: String) -> Any { try! JSONSerialization.jsonObject(with: Da
     @Test func theBridgeIsLeelas() {
         let js = Bridge.shim(leela)
         #expect(js.contains("window.webkit.messageHandlers.leela.postMessage") && js.contains("window.pywebview.api.__leela") && js.contains("window.pywebview = {api}") && js.contains("'pywebviewready'"))
-        #expect(leela.bridge.methods == ["open_folder", "pick_folder", "pick_path", "open_path", "recent", "set_background", "set_title"])
+        #expect(leela.bridge.methods == ["open_folder", "pick_folder", "pick_path", "open_path", "recent", "set_background", "set_title", "titlebar"])
     }
 
     @Test func brewUpgradesTheLeelaCask() throws {

@@ -12,6 +12,10 @@ public enum BridgeAction: Equatable, Sendable {
     case recent
     case setBackground(String)
     case setTitle(String, url: String?)
+    /// the title bar's style, so the page knows what room to leave
+    case titlebar
+    /// the pointer entered (true) or left an element whose own class is the drag class; not a page API
+    case dragRegion(Bool)
     case unknown(String)
 }
 
@@ -33,9 +37,27 @@ public enum Bridge {
         case "recent": return .recent
         case "set_background": return s(0).flatMap { isColour($0) ? .setBackground($0) : nil } ?? .unknown(m)
         case "set_title": return s(0).map { .setTitle($0, url: s(1)) } ?? .unknown(m)
+        case "titlebar": return .titlebar
+        case "drag_region": return (a.first as? Bool).map { .dragRegion($0) } ?? .unknown(m)
         default: return .unknown(m)
         }
     }
+
+    /// with a `mac-unified` title bar: tells the launcher when the pointer is over an element whose own class is the drag class, as
+    /// WKWebView ignores -webkit-app-region; the launcher drags the window on a mouse-down there
+    public static func dragScript(_ c: LauncherConfig = Kavacha.config) -> String {
+        """
+        (() => {
+          let on = false;
+          addEventListener('mouseover', e => {
+            const t = !!(e.target && e.target.classList && e.target.classList.contains(\(jsString(c.titlebar.drag_class))));
+            if (t !== on) { on = t; window.webkit.messageHandlers.\(c.bridge.handler).postMessage({method: 'drag_region', args: [t]}); }
+          }, true);
+        })();
+        """
+    }
+
+    static func jsString(_ s: String) -> String { (try? JSONSerialization.data(withJSONObject: [s])).map { String(decoding: $0, as: UTF8.self).dropFirst().dropLast() }.map(String.init) ?? "\"\"" }
 
     public static func isColour(_ s: String) -> Bool { s.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression) != nil }
 

@@ -37,7 +37,7 @@ def childenv(prefix='APP_', platform=None, server_args=None, base=None):
     if server_args is not None: s['server_args'] = list(server_args)
     return s
 
-# %% ../nbs/07_thin.ipynb #692422e6
+# %% ../nbs/07_thin.ipynb #b803266a
 @dataclass
 class Thin:
     "One thin app: identity, server, lock signing, lock, native capabilities and distribution."
@@ -82,7 +82,7 @@ class Thin:
     build_dir: str = 'build/thin'
     uv_sha256: str = 'packaging/uv.sha256'
     # native capabilities
-    bridge: list = field(default_factory=lambda: ['open_folder', 'pick_folder', 'pick_path', 'open_path', 'recent', 'set_background', 'set_title'])
+    bridge: list = field(default_factory=lambda: ['open_folder', 'pick_folder', 'pick_path', 'open_path', 'recent', 'set_background', 'set_title', 'titlebar'])
     bridge_global: str = 'pywebview'  # the page reads `window.<bridge_global>.api`
     sites: dict = field(default_factory=dict)    # {list, go}: a window per site on a port of its own
     routes: dict = field(default_factory=dict)   # {open, grant, menu, recent}: the server routes the launcher calls

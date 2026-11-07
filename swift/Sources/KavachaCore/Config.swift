@@ -59,7 +59,7 @@ public struct LauncherConfig: Codable, Sendable, Equatable {
         let low = name.lowercased()
         return LauncherConfig(api: LauncherAPI.version, name: name, identifier: "org.\(low).\(low)", support: name, marker: ".\(low)-env.json", sig_ns: "\(low)-lock",
                               env_prefix: name.uppercased() + "_", server: low, health: "/health", lock_project: "\(low)-lock", python: "3.13", channel: channel, extras: extras,
-                              bridge: BridgeNames(handler: low, flag: "__\(low)", methods: ["open_folder", "pick_folder", "pick_path", "open_path", "recent", "set_background", "set_title"], js_global: "pywebview"),
+                              bridge: BridgeNames(handler: low, flag: "__\(low)", methods: ["open_folder", "pick_folder", "pick_path", "open_path", "recent", "set_background", "set_title", "titlebar"], js_global: "pywebview"),
                               sites: [:], routes: ["open": "/hub/open", "grant": "/hub/grant", "recent": "/app/recent"], capabilities: ["confirm", "grant", "update", "extras"],
                               menus: "/app/menu.json", menu_action_js: "leeAct({action})", window: WindowSpec(size: [1440, 900], min_size: [900, 560], home: "\(low):home", title_prefix: "\(low) — "),
                               titlebar: Titlebar(style: "native", query: "titlebar", drag_class: "pywebview-drag-region"), cask: low, debug_env: name.uppercased() + "_WEBVIEW_DEBUG")

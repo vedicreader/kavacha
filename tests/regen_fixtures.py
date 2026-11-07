@@ -39,7 +39,8 @@ BRIDGE = [
     ({'method': 'recent', 'args': []}, {'recent': True}), ({'method': 'set_background', 'args': ['#1a2B3c']}, {'set_background': '#1a2B3c'}),
     ({'method': 'set_background', 'args': ['red; x']}, {'unknown': 'set_background'}),
     ({'method': 'set_title', 'args': ['a — x', 'http://127.0.0.1:5010/']}, {'set_title': 'a — x', 'url': 'http://127.0.0.1:5010/'}),
-    ({'method': 'set_title', 'args': ['a']}, {'set_title': 'a'}), ({'method': 'eval', 'args': ['x']}, {'unknown': 'eval'})]
+    ({'method': 'set_title', 'args': ['a']}, {'set_title': 'a'}), ({'method': 'titlebar', 'args': []}, {'titlebar': True}), ({'method': 'drag_region', 'args': [True]}, {'drag_region': True}),
+    ({'method': 'drag_region', 'args': ['yes']}, {'unknown': 'drag_region'}), ({'method': 'eval', 'args': ['x']}, {'unknown': 'eval'})]
 
 STATES = [
     dict(name='an old state.json with only some keys loads', json={'current': 'aa', 'highest_n': 3}, want=dict(current='aa', previous=None, pending=None, highest_n=3, bad=[], extras=[], early_crashes=0)),

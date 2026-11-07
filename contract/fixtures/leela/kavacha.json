@@ -11,7 +11,8 @@
    "open_path",
    "recent",
    "set_background",
-   "set_title"
+   "set_title",
+   "titlebar"
   ]
  },
  "capabilities": [

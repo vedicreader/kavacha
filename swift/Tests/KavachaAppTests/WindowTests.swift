@@ -52,6 +52,27 @@ import WebKit
         w.close()
     }
 
+    @Test func aUnifiedTitlebarIsTransparentAndKeepsTheTitle() {
+        let ws = Windows(); ws.titlebar.style = "mac-unified"
+        let (w, v) = ws.make(u("http://127.0.0.1:1/"), title: "leela — x")
+        #expect(w.styleMask.contains(.fullSizeContentView) && w.titlebarAppearsTransparent && w.titleVisibility == .hidden && w.toolbar != nil && w.toolbarStyle == .unified)
+        #expect(w.title == "leela — x", "the Window menu and other apps read it")
+        #expect(v.configuration.userContentController.userScripts.contains { $0.source.contains("drag_region") })
+        #expect(ws.tagged(u("http://127.0.0.1:1/")).absoluteString == "http://127.0.0.1:1/?titlebar=mac-unified" && ws.tagged(u("http://127.0.0.1:1/?a=1&titlebar=x")).absoluteString == "http://127.0.0.1:1/?a=1&titlebar=x")
+        w.close()
+        let n = Windows(), (w2, v2) = n.make(u("http://127.0.0.1:1/"), title: "t")
+        #expect(!w2.styleMask.contains(.fullSizeContentView) && !w2.titlebarAppearsTransparent && w2.toolbar == nil, "native keeps the title bar")
+        #expect(!v2.configuration.userContentController.userScripts.contains { $0.source.contains("drag_region") } && n.tagged(u("http://127.0.0.1:1/")).query == "titlebar=native")
+        w2.close()
+    }
+
+    @Test func aDoubleClickOnTheDragRegionDoesWhatSystemSettingsSays() {
+        let d = UserDefaults(suiteName: "kavacha-test-\(UUID().uuidString)")!
+        #expect(KavachaWebView.doubleClickAction(d) == "Maximize")
+        d.set("Minimize", forKey: "AppleActionOnDoubleClick")
+        #expect(KavachaWebView.doubleClickAction(d) == "Minimize")
+    }
+
     @Test func theBackgroundPaintsEveryWindowAndWhatIsPastThePage() {
         let ws = Windows()
         let (w, v) = ws.make(u("http://127.0.0.1:1/"), title: "t")

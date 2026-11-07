@@ -8,6 +8,17 @@ final class KavachaWebView: WKWebView {
     var debug = false
     /// what a drop from outside opens; `Windows.make` sends it to the app's open events
     var onFiles: (([URL]) -> Void)?
+    /// the pointer is over the page's drag region (`Bridge.dragScript`): a mouse-down drags the window, a double-click acts as the title bar's
+    var overDrag = false
+    override func mouseDown(with e: NSEvent) {
+        guard overDrag, let w = window else { return super.mouseDown(with: e) }
+        if e.clickCount == 2 { Self.doubleClick(w) } else { w.performDrag(with: e) }
+    }
+    /// what a double-click on a title bar does, as System Settings says (`AppleActionOnDoubleClick`)
+    static func doubleClickAction(_ d: UserDefaults = .standard) -> String { d.string(forKey: "AppleActionOnDoubleClick") ?? "Maximize" }
+    static func doubleClick(_ w: NSWindow) {
+        switch doubleClickAction() { case "Minimize": w.miniaturize(nil); case "None": break; default: w.zoom(nil) }
+    }
     override func willOpenMenu(_ m: NSMenu, with e: NSEvent) { if !debug { m.removeAllItems() } }
 
     /// the file URLs on a pasteboard from another app, else none
@@ -47,6 +58,8 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     /// `<PREFIX>WEBVIEW_DEBUG`: the inspector and the native context menu
     static var debug: Bool { !(ProcessInfo.processInfo.environment[Kavacha.config.debug_env] ?? "").isEmpty }
     var port = 0
+    /// `mac-unified`: the page draws under a transparent title bar; `native` keeps the title bar
+    var titlebar = Kavacha.config.titlebar
     var background = NSColor.windowBackgroundColor
     var windows: [String: (NSWindow, WKWebView)] = [:]
     /// closed windows, kept for the Dock icon to bring back, most recent last
@@ -95,12 +108,28 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         v.allowsBackForwardNavigationGestures = false
         v.underPageBackgroundColor = background
         let w = NSWindow(contentRect: NSRect(origin: .zero, size: Self.size), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        if titlebar.unified { Self.unify(w); c.userContentController.addUserScript(WKUserScript(source: Bridge.dragScript(), injectionTime: .atDocumentEnd, forMainFrameOnly: true)) }
+        // the title is set either way: the Window menu and other apps read it
         w.title = title; w.contentView = v; w.initialFirstResponder = v; w.makeFirstResponder(v)
         w.minSize = Self.minSize; w.collectionBehavior.insert(.fullScreenPrimary)
         w.backgroundColor = background
         w.isReleasedWhenClosed = false
         w.delegate = self
         return (w, v)
+    }
+
+    /// a transparent title bar with a hidden title over a full-size content view; an empty unified toolbar makes it 52 pt with the traffic lights in its centre
+    static func unify(_ w: NSWindow) {
+        w.styleMask.insert(.fullSizeContentView)
+        w.titlebarAppearsTransparent = true; w.titleVisibility = .hidden
+        w.toolbar = NSToolbar(identifier: "kavacha-titlebar"); w.toolbarStyle = .unified
+    }
+
+    /// `url` with `<query>=<style>`, so the page knows its title bar from the first load
+    func tagged(_ url: URL) -> URL {
+        guard var c = URLComponents(url: url, resolvingAgainstBaseURL: false), !(c.queryItems ?? []).contains(where: { $0.name == titlebar.query }) else { return url }
+        c.queryItems = (c.queryItems ?? []) + [URLQueryItem(name: titlebar.query, value: titlebar.style)]
+        return c.url ?? url
     }
 
     /// shows the window for `url`, opening it when there is none
@@ -150,7 +179,7 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         Task { [urlWait] in
             let ok = await Self.answers(url, within: urlWait)
             self.note(v, "answers \(url.absoluteString) \(ok)")
-            if ok { v.load(URLRequest(url: url)) } else { self.unreachable(v, url) }
+            if ok { v.load(URLRequest(url: self.tagged(url))) } else { self.unreachable(v, url) }
         }
     }
 
@@ -250,6 +279,8 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
             let w = url.flatMap(URL.init(string:)).flatMap { windows[self.key($0)]?.0 } ?? m.webView?.window
             w?.title = t
             replyHandler(w != nil, nil)
+        case .titlebar: replyHandler(titlebar.style, nil)
+        case .dragRegion(let on): (m.webView as? KavachaWebView)?.overDrag = on; replyHandler(nil, nil)
         case .unknown(let what): replyHandler(nil, "unknown call \(what)")
         }
     }

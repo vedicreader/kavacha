@@ -2,6 +2,16 @@
 
 <!-- do not remove -->
 
+## 0.0.17
+
+- Thin apps. A thin app is kavacha's native launcher and the app's Python server, whose packages come from a signed environment lock with its own channel. `contract/api-1.md` is the contract, and `contract/fixtures/` holds the cases the Python and Swift sides both check.
+- `Thin` describes a thin app once, in `packaging/kavacha.toml` or `[tool.kavacha.thin]`. `Thin.config()` writes `kavacha.json`, the launcher's only source of names; `Thin.info_plist()` writes the bundle's `Info.plist`; `childenv()` gives the clean child environment per OS.
+- `kavacha.host.HostClient` is the server's side: the token from stdin, the control routes, `scrub` of launcher 1.0.0's build settings, and `link_tools` (a `.cmd` shim on Windows).
+- `kavacha lock make|hash|check|test|diff|publish|promote|verify|key|dev-lock|fetch|wheel|fixtures|verify-app` makes, tests, signs and publishes a lock. An app adds its own checks in a hooks file (`Thin.hooks`); the test record's code hash covers the hooks too.
+- `kavacha ship mac` builds, signs and checks a bundle; `--release V` also notarizes, staples, uploads to `app-v<V>` and writes the cask.
+- `swift/` is the launcher, from Leela 1.0, with its history: `KavachaCore`, `KavachaApp` and the `kavacha-launcher` executable, configured by `kavacha.json`, and the same code as SwiftPM libraries (`Package.swift` at the root). `kavacha-launcher --check-menu <menu.json>` checks a menu bar with no window. `make -C swift test` runs the Swift tests.
+- `launcher_json()` gives `LAUNCHER_ROWS` as menu rows.
+
 ## 0.0.16
 
 - `unified_titlebar(window)`, turned on by `shell_api().unified = True`: on macOS the title bar is transparent, the title is hidden and the page fills the window under the traffic lights (52 px band); on Windows the caption takes the theme's colours. The title is still set, so the Window menu and Sanketa read it. The page learns the mode from a `titlebar=<mode>` query on the first URL and from `ShellApi.titlebar()`.

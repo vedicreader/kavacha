@@ -115,6 +115,37 @@
  },
  {
   "body": {
+   "method": "titlebar",
+   "args": []
+  },
+  "action": {
+   "titlebar": true
+  }
+ },
+ {
+  "body": {
+   "method": "drag_region",
+   "args": [
+    true
+   ]
+  },
+  "action": {
+   "drag_region": true
+  }
+ },
+ {
+  "body": {
+   "method": "drag_region",
+   "args": [
+    "yes"
+   ]
+  },
+  "action": {
+   "unknown": "drag_region"
+  }
+ },
+ {
+  "body": {
    "method": "eval",
    "args": [
     "x"
