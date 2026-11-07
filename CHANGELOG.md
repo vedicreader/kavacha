@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.16
+
+- `unified_titlebar(window)`, turned on by `shell_api().unified = True`: on macOS the title bar is transparent, the title is hidden and the page fills the window under the traffic lights (52 px band); on Windows the caption takes the theme's colours. The title is still set, so the Window menu and Sanketa read it. The page learns the mode from a `titlebar=<mode>` query on the first URL and from `ShellApi.titlebar()`.
+
 ## 0.0.15
 
 - `sign` retries a file up to 3 times when Apple's timestamp server does not answer, so a short outage no longer fails a ship.
