@@ -333,8 +333,8 @@ def _lock_key(self, home=None, keys_out=None, passphrase=True, agent=True):
     return pubs
 Lock.key_paths, Lock.sign, Lock.allowed, Lock.verify_sig, Lock.check_lock_dir, Lock.lock_key = _key_paths, _sign, _allowed, _verify_sig, _check_lock_dir, _lock_key
 
-# %% ../nbs/09_lock.ipynb #7f8bbbef
-def fixtures(out, ns='demo-lock', platform='darwin-arm64'):
+# %% ../nbs/09_lock.ipynb #a29318d5
+def fixtures(out, ns='app-lock', platform='darwin-arm64'):
     "SSHSIG fixtures made by ssh-keygen with throwaway keys under a temporary HOME."
     out, tmp = Path(out), Path(tempfile.mkdtemp())
     out.mkdir(parents=True, exist_ok=True)
@@ -771,7 +771,7 @@ def _verify_app(self, app, zip_=None):
     return dict(kb=kb, zip_kb=zkb, dev=dev, lock=m.get('n'))
 Lock.verify_app = _verify_app
 
-# %% ../nbs/09_lock.ipynb #7109b415
+# %% ../nbs/09_lock.ipynb #fd36c96f
 def main(argv=None):
     "kavacha lock make|hash|check|test|diff|publish|promote|verify|key|dev-lock|fetch|wheel|fixtures|verify-app"
     a = argparse.ArgumentParser(prog='kavacha lock', description='The signed environment lock of a thin app.')
@@ -788,7 +788,7 @@ def main(argv=None):
     p = s.add_parser('dev-lock'); p.add_argument('out'); p.add_argument('--from', dest='src'); p.add_argument('--n', type=int, default=0)
     p = s.add_parser('fetch'); p.add_argument('out'); p.add_argument('--channel', default='stable', choices=['stable', 'test'])
     p = s.add_parser('wheel'); p.add_argument('version'); p.add_argument('--upload', action='store_true')
-    p = s.add_parser('fixtures'); p.add_argument('out'); p.add_argument('--ns', default='demo-lock')
+    p = s.add_parser('fixtures'); p.add_argument('out'); p.add_argument('--ns', default='app-lock')
     p = s.add_parser('verify-app'); p.add_argument('app'); p.add_argument('--zip')
     o = a.parse_args(argv)
     if o.cmd == 'fixtures': return fixtures(o.out, o.ns)

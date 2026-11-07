@@ -58,6 +58,6 @@ def test_childenv_cases(tmp_path, monkeypatch):
 
 @pytest.mark.skipif(not Path('/usr/bin/ssh-keygen').exists(), reason='no ssh-keygen')
 def test_sshsig_fixtures(tmp_path):
-    lk, d = Lock(Thin('Demo'), tmp_path), FIX/'sshsig'
+    lk, d = Lock(Thin('App'), tmp_path), FIX/'sshsig'
     got = {k: lk.verify_sig(d/'message.json', d/f'{k}.sig', d/'keys.pub') for k in ('main', 'emergency', 'stranger', 'wrongns')}
     assert got == {'main': True, 'emergency': True, 'stranger': False, 'wrongns': False}

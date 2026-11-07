@@ -23,12 +23,12 @@ def _server_env(s, parent, home, extra):
     return e | s['server'] | extra
 
 def childenv_cases():
-    s = childenv('DEMO_', 'linux', ['--app', '--port', '{port}'])
-    parents = [dict(PATH='/usr/bin:/x', HOME='/h', VIRTUAL_ENV='/v', PYTHONPATH='p', UV_INDEX_URL='x', CONDA_PREFIX='c', DEMO_HOST_TOKEN='t', DEMO_LOCK_CHANNEL='test', OPENAI_API_KEY='k'),
+    s = childenv('APP_', 'linux', ['--app', '--port', '{port}'])
+    parents = [dict(PATH='/usr/bin:/x', HOME='/h', VIRTUAL_ENV='/v', PYTHONPATH='p', UV_INDEX_URL='x', CONDA_PREFIX='c', APP_HOST_TOKEN='t', APP_LOCK_CHANNEL='test', OPENAI_API_KEY='k'),
                dict(PATH='/usr/local/bin:/usr/bin', HOME='/h', LANG='de_DE.UTF-8', NO_COLOR='0')]
     vals = dict(cache='/c', python='/py', python_version='3.13.18', env='/e')
-    out = [dict(spec=s, parent=p, home='/h', vals=vals, lock='/l', port=4567, extra={'DEMO_APP_VERSION': '1.0.0'},
-                uv_env=_uv_env(s, p, '/h', vals), server_env=_server_env(s, p, '/h', {'DEMO_APP_VERSION': '1.0.0'}),
+    out = [dict(spec=s, parent=p, home='/h', vals=vals, lock='/l', port=4567, extra={'APP_APP_VERSION': '1.0.0'},
+                uv_env=_uv_env(s, p, '/h', vals), server_env=_server_env(s, p, '/h', {'APP_APP_VERSION': '1.0.0'}),
                 sync=['sync', '--frozen', '--no-install-project', '--project', '/l', '--inexact', '--extra', 'a'], server_args=['--app', '--port', '4567']) for p in parents]
     (FIX/'childenv_cases.json').write_text(json.dumps(out, indent=1, sort_keys=True) + '\n')
 
@@ -75,5 +75,5 @@ def leela():
 
 if __name__ == '__main__':
     lock_vector(); childenv_cases(); cases(); leela()
-    if '--sshsig' in sys.argv: fixtures(FIX/'sshsig', 'demo-lock')
+    if '--sshsig' in sys.argv: fixtures(FIX/'sshsig', 'app-lock')
     print(f'fixtures in {FIX}')
