@@ -6,14 +6,16 @@ from __future__ import annotations
 # %% auto #0
 __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZE', 'STORAGE', 'EAGER_CDP', 'CDP_PORT',
            'HEADLESS_PORT', 'HEADLESS_PROFILE', 'SPLASH', 'DOCK_RECENT', 'hidden_windows', 'quitting',
-           'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'OPEN_TTL', 'DROP_JS', 'CMD', 'CTRL', 'ALT', 'SHIFT',
-           'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'choose_path', 'backend', 'shell_ready',
-           'wait_for_http', 'cdp_target', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash', 'dock_menu',
-           'dock_delegates', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution', 'keep_running_in_dock',
-           'shell_api', 'system_dark', 'window_background', 'make_window', 'off_main_thread', 'bring_forward',
-           'open_window', 'run_shell', 'menus', 'open_paths', 'take_dropped', 'arm_drops', 'watch_open_events',
-           'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'exact_bar', 'menu_json',
-           'OpenHandler', 'RecentTarget']
+           'NO_SUBSTITUTION', 'WINDOW_KW', 'keyed_windows', 'TITLEBARS', 'FULL_SIZE_CONTENT', 'TITLE_HIDDEN',
+           'TOOLBAR_UNIFIED', 'DWMWA_DARK', 'DWMWA_CAPTION', 'DWMWA_TEXT', 'OPEN_TTL', 'DROP_JS', 'CMD', 'CTRL', 'ALT',
+           'SHIFT', 'use_app', 'errstr', 'is_colour', 'paint_background', 'ShellApi', 'choose_path', 'backend',
+           'shell_ready', 'wait_for_http', 'cdp_target', 'start_cdp', 'warm_cdp', 'window_size', 'is_light', 'splash',
+           'dock_menu', 'dock_delegates', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution',
+           'keep_running_in_dock', 'shell_api', 'system_dark', 'window_background', 'make_window', 'titlebar_mode',
+           'with_titlebar', 'off_main_thread', 'bring_forward', 'open_window', 'unify_nswindow', 'colorref',
+           'tint_caption', 'unified_titlebar', 'run_shell', 'menus', 'open_paths', 'take_dropped', 'arm_drops',
+           'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'exact_bar',
+           'menu_json', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -68,6 +70,7 @@ def is_colour(c):
 def paint_background(window, colour):
     "Give pywebview `window` the native background `colour`. On macOS an open window repaints now."
     window.background_color = colour
+    if (hwnd := getattr(window, 'hwnd', None)) is not None: tint_caption(hwnd, colour)
     if sys.platform != 'darwin': return
     from PyObjCTools.AppHelper import callAfter
     from webview.platforms.cocoa import BrowserView
@@ -124,6 +127,10 @@ class ShellApi:
     def recent(self):
         "Whatever the host offers as recent folders, or nothing."
         return list(self.on_recent()) if self.on_recent else []
+    unified = False
+    def titlebar(self):
+        "How this app's windows show their title bar, as `titlebar_mode` names it: `native` unless the host set `unified`."
+        return titlebar_mode() if self.unified else 'native'
     background = None
     def set_background(self, colour):
         "Paint every open window's native background `colour`, and open later windows on it. False unless `#rrggbb`."
@@ -486,8 +493,32 @@ def make_window(title=None, size=None, background=None):
     window = webview.create_window(title or APP_NAME, html=splash(title or APP_NAME, background=bg), width=w, height=h,
                                    js_api=shell_api(), **{**WINDOW_KW, 'background_color': bg})
     if sys.platform == 'darwin': window.events.loaded += arm_drops
+    window.titlebar = shell_api().titlebar()
+    if window.titlebar != 'native':
+        # Only the drag region itself moves the window, so a press on a button in it stays a click.
+        webview.settings['DRAG_REGION_DIRECT_TARGET_ONLY'] = True
+        window.events.before_show += lambda: unified_titlebar(window, bg)
     return window
 
+
+# %% ../nbs/04_window.ipynb #a7c1e002
+TITLEBARS = {'darwin': 'mac-unified', 'win32': 'win-caption'}
+#: AppKit's `NSWindowStyleMaskFullSizeContentView`, `NSWindowTitleHidden` and `NSWindowToolbarStyleUnified`.
+FULL_SIZE_CONTENT, TITLE_HIDDEN, TOOLBAR_UNIFIED = 1 << 15, 1, 3
+#: DWM attributes: immersive dark mode, caption colour and caption text colour.
+DWMWA_DARK, DWMWA_CAPTION, DWMWA_TEXT = 20, 35, 36
+
+def titlebar_mode(platform=None):
+    "How a unified window shows its title bar on `platform`: `mac-unified`, `win-caption`, or `native` where nothing changes."
+    return TITLEBARS.get(platform or sys.platform, 'native')
+
+def with_titlebar(url, mode):
+    "`url` with `titlebar=<mode>` in its query, unless `mode` is `native`."
+    if mode == 'native': return url
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+    u = urlsplit(url)
+    q = [(k, v) for k, v in parse_qsl(u.query, keep_blank_values=True) if k != 'titlebar'] + [('titlebar', mode)]
+    return urlunsplit(u._replace(query=urlencode(q)))
 
 # %% ../nbs/04_window.ipynb #48f7ad1a
 def off_main_thread(fn, name='kavacha-shell'):
@@ -524,8 +555,63 @@ def open_window(url, title=None, key=None, url_wait=90):
 # %% ../nbs/04_window.ipynb #95dfcc76
 def _point(window, url, url_wait=90):
     "Wait for the server, then show the workspace. A window that never answers says so."
-    if wait_for_http(url, timeout=url_wait): window.load_url(url)
+    if wait_for_http(url, timeout=url_wait): window.load_url(with_titlebar(url, getattr(window, 'titlebar', 'native')))
     else: window.load_html(_unreachable(url, getattr(window, 'background_color', None) or WINDOW_KW['background_color']))
+
+# %% ../nbs/04_window.ipynb #a7c1e005
+def unify_nswindow(nsw, toolbar=None):
+    "Lay `nsw`'s content under a transparent title bar with no title, 52 points high so the traffic lights centre in the page's top row."
+    nsw.setStyleMask_(nsw.styleMask() | FULL_SIZE_CONTENT)
+    nsw.setTitlebarAppearsTransparent_(True)
+    nsw.setTitleVisibility_(TITLE_HIDDEN)
+    if toolbar is None:
+        from AppKit import NSToolbar
+        toolbar = NSToolbar.alloc().initWithIdentifier_('kavacha-unified')
+    toolbar.setShowsBaselineSeparator_(False)
+    nsw.setToolbar_(toolbar)
+    if nsw.respondsToSelector_('setToolbarStyle:'): nsw.setToolbarStyle_(TOOLBAR_UNIFIED)
+    return 'mac-unified'
+
+def colorref(colour):
+    "`#rrggbb` as a Windows COLORREF, `0x00bbggrr`."
+    r, g, b = (int(colour[i:i+2], 16) for i in (1, 3, 5))
+    return r | g << 8 | b << 16
+
+def _dwm_set(hwnd, attr, value):
+    import ctypes
+    v = ctypes.c_int(value)
+    return ctypes.windll.dwmapi.DwmSetWindowAttribute(ctypes.c_void_p(hwnd), attr, ctypes.byref(v), ctypes.sizeof(v)) == 0
+
+def tint_caption(hwnd, background, set_attr=None):
+    "Paint the Windows caption of `hwnd` in `background`, with dark mode and light text on a dark one. Whether dark mode took."
+    if not is_colour(background): return False
+    set_attr = set_attr or _dwm_set
+    dark = not is_light(background)
+    ok = set_attr(hwnd, DWMWA_DARK, int(dark))
+    set_attr(hwnd, DWMWA_CAPTION, colorref(background))
+    set_attr(hwnd, DWMWA_TEXT, colorref('#e6edf3' if dark else '#1f2328'))
+    return bool(ok)
+
+def _native(window, platform):
+    "pywebview's own view of `window` on `platform`, or None before it is built."
+    if platform == 'darwin': from webview.platforms.cocoa import BrowserView
+    elif platform == 'win32': from webview.platforms.winforms import BrowserView
+    else: return None
+    return BrowserView.instances.get(window.uid)
+
+def unified_titlebar(window, background=None, platform=None, native=None):
+    "Merge pywebview `window`'s title bar with the page's top row as this platform does it natively; the mode it gave. Call on the GUI thread."
+    platform = platform or sys.platform
+    if (mode := titlebar_mode(platform)) == 'native': return mode
+    try:
+        if (v := native or _native(window, platform)) is None: return 'native'
+        if mode == 'mac-unified': return unify_nswindow(v.window)
+        window.hwnd = int(v.Handle.ToInt64())
+        tint_caption(window.hwnd, background or window_background())
+        return mode
+    except Exception as e:
+        print(f'  unified title bar: {errstr(e)}')
+        return 'native'
 
 # %% ../nbs/04_window.ipynb #022366f0
 def run_shell(urls, titles=(), url_wait=90, gui=None, icon=None, size=None, on_ready=None,
