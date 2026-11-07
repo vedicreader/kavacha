@@ -967,7 +967,7 @@ def menu_json(bar, lookup, mac=None, native=()):
     return [{'title': t, 'items': _tidy([_pc_row(r, lookup, set(native)) for r in rows])} for t, rows in bar]
 
 # %% ../nbs/04_window.ipynb #7a1c0e01
-def launcher_json(lookup=lambda a: None):
+def launcher_json(lookup=lambda a: None, mac=None):
     "`LAUNCHER_ROWS` as menu rows: the chords a native launcher owns (Quit, Hide, Close Window, Undo, ...)."
     from kavacha.menus import LAUNCHER_ROWS
-    return menu_json([('', LAUNCHER_ROWS)], lookup)[0]['items']
+    return menu_json([('', LAUNCHER_ROWS)], lookup, mac=mac)[0]['items']
