@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="The row types a menu bar is described with, and the part of a keymap a menu reads">
+
+<title>menus – kavacha</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f9f5dbbce22ca1ed143a646131f7ec01.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="menus – kavacha">
+<meta property="og:description" content="The row types a menu bar is described with, and the part of a keymap a menu reads">
+<meta property="og:site_name" content="kavacha">
+<meta name="twitter:title" content="menus – kavacha">
+<meta name="twitter:description" content="The row types a menu bar is described with, and the part of a keymap a menu reads">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark" aria-label="Site">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">kavacha</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./menus.html">menus</a></li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Section">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">kavacha</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./probe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">probe</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bundle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bundle</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./build.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">build</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./window.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">window</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./icons.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">icons</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./menus.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">menus</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./thin.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">thin</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./host.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">host</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./lock.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">lock</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ship.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ship</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-rows" id="toc-the-rows" class="nav-link active" data-scroll-target="#the-rows">The rows</a></li>
+  <li><a href="#key-bindings" id="toc-key-bindings" class="nav-link" data-scroll-target="#key-bindings">Key bindings</a></li>
+  <li><a href="#chords-a-menu-must-not-take" id="toc-chords-a-menu-must-not-take" class="nav-link" data-scroll-target="#chords-a-menu-must-not-take">Chords a menu must not take</a></li>
+  <li><a href="#how-a-chord-is-written-for-a-person" id="toc-how-a-chord-is-written-for-a-person" class="nav-link" data-scroll-target="#how-a-chord-is-written-for-a-person">How a chord is written for a person</a></li>
+  <li><a href="#keys-off-a-mac" id="toc-keys-off-a-mac" class="nav-link" data-scroll-target="#keys-off-a-mac">Keys off a Mac</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="menus.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">menus</h1>
+</div>
+
+<div>
+  <div class="description">
+    The row types a menu bar is described with, and the part of a keymap a menu reads
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>A host describes its menu bar as data: a list of menus, each with a title and a list of rows. This module defines the row types, and the small part of a keymap a menu needs to read. They are plain dataclasses that do not import pywebview or AppKit, so a host can build and test its menu table on any machine. <code>kavacha.window</code> turns the table into a native menu bar on macOS.</p>
+<section id="the-rows" class="level3">
+<h3 class="anchored" data-anchor-id="the-rows">The rows</h3>
+<p><a href="https://vedicreader.github.io/kavacha/menus.html#menuitem"><code>MenuItem</code></a> is a row that runs one of the host’s actions, named by <code>action</code>. When the user chooses it, the window calls the host’s <code>on_action</code> with that name. A <a href="https://vedicreader.github.io/kavacha/menus.html#menuitem"><code>MenuItem</code></a> with no action is a separator line, which is why <code>action</code> has a default. <code>kind</code> is either empty or <code>warn</code>. <code>warn</code> marks a row the host may want to draw as destructive, such as one that discards changes; kavacha passes it through without acting on it, and refuses any other value.</p>
+<div id="7986c166" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.225891+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.233167+00:00&quot;,&quot;total&quot;:0.007278648999999859}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L13" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="menuitem" class="level3">
+<h3 class="anchored" data-anchor-id="menuitem">MenuItem</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> MenuItem(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    action:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, kind:<span class="bu">str</span><span class="op">=</span><span class="st">''</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="va">None</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>One action in a menu. A blank action is a separator.</em></p>
+</section>
+</div>
+<div id="c8a0f3ef" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>MenuItem(<span class="st">'open_folder'</span>), MenuItem()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/menus.html#std"><code>Std</code></a> is a row that AppKit already knows how to handle, such as Cut, Copy, Paste and Select All, so the host does not handle it at all. The row names an AppKit selector, such as <code>cut:</code>. The menu sends that selector along AppKit’s responder chain, the chain of objects that starts at whatever has keyboard focus, and the first one that understands it acts. <code>key</code> and <code>mods</code> give the row’s shortcut directly, because a row like this has no entry in the host’s keymap.</p>
+<p><a href="https://vedicreader.github.io/kavacha/menus.html#js"><code>Js</code></a> is a row that runs a JavaScript expression in the focused window, for small jobs such as reloading the page that need no action of their own.</p>
+<div id="914a04dc" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.235295+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.238139+00:00&quot;,&quot;total&quot;:0.0028460719999969797}}" data-execution_count="6">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L23" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="std" class="level3">
+<h3 class="anchored" data-anchor-id="std">Std</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Std(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    title:<span class="bu">str</span>, selector:<span class="bu">str</span>, key:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, mods:<span class="bu">str</span><span class="op">=</span><span class="st">'mod'</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="va">None</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A row AppKit handles itself, by sending <code>selector</code> to whatever has focus.</em></p>
+</section>
+</div>
+<div id="2a8b1e71" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.239808+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.242586+00:00&quot;,&quot;total&quot;:0.002780434000001719}}" data-execution_count="8">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L32" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="js" class="level3">
+<h3 class="anchored" data-anchor-id="js">Js</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Js(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    title:<span class="bu">str</span>, expr:<span class="bu">str</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="va">None</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A row that runs the JavaScript expression <code>expr</code> in the focused window.</em></p>
+</section>
+</div>
+<div id="d14f7980" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Std(<span class="st">'Cut'</span>, <span class="st">'cut:'</span>, <span class="st">'x'</span>), Js(<span class="st">'Reload'</span>, <span class="st">'location.reload()'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="key-bindings" class="level3">
+<h3 class="anchored" data-anchor-id="key-bindings">Key bindings</h3>
+<p>A menu shows each action’s label and shortcut, and the host keeps both in its keymap. kavacha does not read the keymap itself. The host supplies a lookup function that takes an action name and returns a <a href="https://vedicreader.github.io/kavacha/menus.html#binding"><code>Binding</code></a>, or <code>None</code> for an action it does not know. A <a href="https://vedicreader.github.io/kavacha/menus.html#binding"><code>Binding</code></a> holds the action’s chords, its label, and its scope, meaning where the binding applies. A <code>global</code> binding becomes a menu shortcut. A binding with another scope becomes one only when <code>shared</code> is false, which the host sets when no other scope binds the same chord. A dict’s <code>get</code> method is the simplest lookup, as in the example.</p>
+<div id="5af37d37" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.244697+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.247574+00:00&quot;,&quot;total&quot;:0.0028795630000004735}}" data-execution_count="10">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L39" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="binding" class="level3">
+<h3 class="anchored" data-anchor-id="binding">Binding</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Binding(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    keys:<span class="bu">tuple</span><span class="op">=</span>(), label:<span class="bu">str</span><span class="op">=</span><span class="st">''</span>, scope:<span class="bu">str</span><span class="op">=</span><span class="st">'global'</span>, shared:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>)<span class="op">-&gt;</span><span class="va">None</span>:</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>What a menu row reads from the host’s keymap: the chords, the label, where it applies, and whether another scope binds its chord.</em></p>
+</section>
+</div>
+<div id="11a0e43b" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>keys <span class="op">=</span> {<span class="st">'save'</span>: Binding((<span class="st">'mod+s'</span>,), <span class="st">'Save'</span>), <span class="st">'find'</span>: Binding((<span class="st">'mod+f'</span>,), scope<span class="op">=</span><span class="st">'editor'</span>)}</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>keys.get(<span class="st">'save'</span>), keys.get(<span class="st">'nothing'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>bound</code> is true when the binding has at least one chord. It is worked out from <code>keys</code> instead of being stored, so an unbound action is just <a href="https://vedicreader.github.io/kavacha/menus.html#binding"><code>Binding()</code></a> and the two can never disagree.</p>
+</section>
+<section id="chords-a-menu-must-not-take" class="level3">
+<h3 class="anchored" data-anchor-id="chords-a-menu-must-not-take">Chords a menu must not take</h3>
+<p>A menu shortcut wins over the web page, so a chord the system or a window manager already uses must never become one. <code>RESERVED</code> lists them in the keymap grammar: Hyper (<code>hyper</code>, Command, Control, Option and Shift together) with the keys AeroSpace takes, AeroSpace’s own Control and Option chords, and the macOS system chords. <a href="https://vedicreader.github.io/kavacha/window.html#menu_chord"><code>kavacha.window.menu_chord</code></a> refuses every one of them, and a host can lint its default keymap against the same set.</p>
+<p>The launcher’s own rows are <a href="https://vedicreader.github.io/kavacha/menus.html#std"><code>Std</code></a> rows every Mac app has. <code>LAUNCHER_ROWS</code> lists them with their chords, so a host can check that no chord on its own menu bar lands on one of them. Close Window takes ⇧⌘W, which leaves ⌘W for the host’s Close Tab.</p>
+</section>
+<section id="how-a-chord-is-written-for-a-person" class="level3">
+<h3 class="anchored" data-anchor-id="how-a-chord-is-written-for-a-person">How a chord is written for a person</h3>
+<p><a href="https://vedicreader.github.io/kavacha/menus.html#chord_glyph"><code>chord_glyph</code></a> writes one chord the way a Mac menu does: the modifier glyphs in the order ⌃⌥⇧⌘, then the key as a capital letter or a symbol such as ↩︎ or ⌫. With <code>mac=False</code> it writes <code>Ctrl+Shift+P</code>. <code>mod</code> is Command on a Mac and Control elsewhere, <code>hyper</code> is all four modifiers, and a capital letter means Shift. A sequence of chords separated by spaces keeps its spaces. Every place a host shows a chord, such as its menus, palette, help and toasts, can use this one function, so they all agree.</p>
+<div id="7b316ee0" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.254888+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.257958+00:00&quot;,&quot;total&quot;:0.0030733110000014108}}" data-execution_count="14">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L88" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="chord_glyph" class="level3">
+<h3 class="anchored" data-anchor-id="chord_glyph">chord_glyph</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> chord_glyph(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    chord, mac:<span class="bu">bool</span><span class="op">=</span><span class="va">True</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>How <code>chord</code> is written for a person: ⌃⌥⇧⌘ and a capital on a Mac, <code>Ctrl+Shift+P</code> elsewhere.</em></p>
+</section>
+</div>
+<div id="8fb91754" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.258073+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.259182+00:00&quot;,&quot;total&quot;:0.001111567000002367}}" data-exec_doc="true" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>chord_glyph(<span class="st">'mod+shift+p'</span>), chord_glyph(<span class="st">'alt+shift+b'</span>), chord_glyph(<span class="st">'mod+enter'</span>), chord_glyph(<span class="st">'mod+shift+p'</span>, mac<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="15">
+<pre><code>('⇧⌘P', '⌥⇧B', '⌘↩', 'Ctrl+Shift+P')</code></pre>
+</div>
+</div>
+</section>
+<section id="keys-off-a-mac" class="level3">
+<h3 class="anchored" data-anchor-id="keys-off-a-mac">Keys off a Mac</h3>
+<p>On Linux and Windows, <code>mod</code> is Control. Most chords keep their meaning, but some do not. ⌃⌘F, the Mac chord for Full Screen, becomes Ctrl+F, which is Find. Hide and Minimize have no use under a tiling window manager such as Regolith’s i3 or sway. <a href="https://vedicreader.github.io/kavacha/menus.html#pc_key"><code>pc_key</code></a> gives the chord a <a href="https://vedicreader.github.io/kavacha/menus.html#std"><code>Std</code></a> row takes off a Mac. A Mac-only row takes the chord from a small table: Full Screen is F11, Close Window is Ctrl+Shift+W and Quit is Ctrl+Q. Hide, Hide Others, Minimize, Zoom and Bring All to Front get <code>None</code>, which means that the row is not shown. Every other row keeps its chord, with <code>mod</code> as Control. <a href="https://vedicreader.github.io/kavacha/menus.html#pc_chord"><code>pc_chord</code></a> writes any chord in this PC form.</p>
+<p><code>LINUX_RESERVED</code> lists the chords a Linux desktop keeps for itself: Regolith’s and GNOME’s. <a href="https://vedicreader.github.io/kavacha/menus.html#pc_reserved"><code>pc_reserved</code></a> also refuses every chord with Super, because Regolith owns almost all of them. A host can lint its PC keymap against the same set.</p>
+<p><a href="https://vedicreader.github.io/kavacha/menus.html#gtk_accel"><code>gtk_accel</code></a> writes a chord as a GTK accelerator, such as <code>&lt;Control&gt;&lt;Shift&gt;w</code>. GTK runs a window’s accelerators before the widget that has focus. A native accelerator on Copy would take Ctrl+C away from a terminal in the page, so <a href="https://vedicreader.github.io/kavacha/window.html#menu_json"><code>menu_json</code></a> gives one only to rows the page never needs. <code>PC_NATIVE</code> names those launcher rows: Quit, Close Window and Full Screen.</p>
+<div id="2a99dbeb" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.263530+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.266383+00:00&quot;,&quot;total&quot;:0.0028556570000048964}}" data-execution_count="17">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L122" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="gtk_accel" class="level3">
+<h3 class="anchored" data-anchor-id="gtk_accel">gtk_accel</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gtk_accel(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    chord</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>One chord as a GTK accelerator, such as <code>&lt;Control&gt;&lt;Shift&gt;w</code>, with <code>mod</code> as Control.</em></p>
+</section>
+</div>
+<div id="dc2cb487" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.266470+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.269131+00:00&quot;,&quot;total&quot;:0.0026643409999991263}}" data-execution_count="18">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L111" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="pc_key" class="level3">
+<h3 class="anchored" data-anchor-id="pc_key">pc_key</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pc_key(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    row</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The chord a <a href="https://vedicreader.github.io/kavacha/menus.html#std"><code>Std</code></a> row takes off a Mac: the table’s for a Mac-only row, else its own; None when the row is not shown.</em></p>
+</section>
+</div>
+<div id="2f4c7075" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.269236+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.271818+00:00&quot;,&quot;total&quot;:0.00258466199999674}}" data-execution_count="19">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L107" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="pc_reserved" class="level3">
+<h3 class="anchored" data-anchor-id="pc_reserved">pc_reserved</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pc_reserved(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    chord</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Whether a Linux desktop keeps <code>chord</code>: every Super chord, and <code>LINUX_RESERVED</code>.</em></p>
+</section>
+</div>
+<div id="a5a5be82" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.271906+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.274669+00:00&quot;,&quot;total&quot;:0.002765973000002475}}" data-execution_count="20">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/menus.py#L99" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="pc_chord" class="level3">
+<h3 class="anchored" data-anchor-id="pc_chord">pc_chord</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pc_chord(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    chord</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>One chord off a Mac, as <code>ctrl+alt+shift+super+base</code> with <code>mod</code> folded into Control.</em></p>
+</section>
+</div>
+<div id="pc-keys-doc" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.274758+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.275849+00:00&quot;,&quot;total&quot;:0.0010932389999993575}}" data-exec_doc="true" data-execution_count="21">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>{r.title: pc_key(r) <span class="cf">for</span> r <span class="kw">in</span> LAUNCHER_ROWS}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="21">
+<pre><code>{'Quit': 'ctrl+q',
+ 'Hide': None,
+ 'Hide Others': None,
+ 'Close Window': 'ctrl+shift+w',
+ 'Undo': 'ctrl+z',
+ 'Redo': 'ctrl+shift+z',
+ 'Minimize': None,
+ 'Enter Full Screen': 'f11'}</code></pre>
+</div>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/window.html#menu_bar"><code>kavacha.window.menu_bar</code></a> takes the menu table and the lookup function together. kavacha ships no default table for either, because what belongs on an app’s File menu is up to the app.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/kavacha");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

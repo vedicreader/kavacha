@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="The signed environment lock of a thin app: make, check, test, diff, publish, promote, verify, and its signing keys">
+
+<title>lock – kavacha</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f9f5dbbce22ca1ed143a646131f7ec01.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="lock – kavacha">
+<meta property="og:description" content="The signed environment lock of a thin app: make, check, test, diff, publish, promote, verify, and its signing keys">
+<meta property="og:site_name" content="kavacha">
+<meta name="twitter:title" content="lock – kavacha">
+<meta name="twitter:description" content="The signed environment lock of a thin app: make, check, test, diff, publish, promote, verify, and its signing keys">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark" aria-label="Site">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">kavacha</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav" aria-label="Toolbar">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Breadcrumbs"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./lock.html">lock</a></li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Section">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">kavacha</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./probe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">probe</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./spec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bundle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bundle</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./build.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">build</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./window.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">window</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./icons.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">icons</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./menus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">menus</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./thin.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">thin</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./host.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">host</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./lock.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">lock</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ship.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ship</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#small-helpers" id="toc-small-helpers" class="nav-link active" data-scroll-target="#small-helpers">Small helpers</a></li>
+  <li><a href="#the-lock-hash" id="toc-the-lock-hash" class="nav-link" data-scroll-target="#the-lock-hash">The lock hash</a></li>
+  <li><a href="#platforms-and-wheels" id="toc-platforms-and-wheels" class="nav-link" data-scroll-target="#platforms-and-wheels">Platforms and wheels</a></li>
+  <li><a href="#the-lock-tool" id="toc-the-lock-tool" class="nav-link" data-scroll-target="#the-lock-tool">The lock tool</a></li>
+  <li><a href="#the-child-environment" id="toc-the-child-environment" class="nav-link" data-scroll-target="#the-child-environment">The child environment</a></li>
+  <li><a href="#writing-the-pinned-project" id="toc-writing-the-pinned-project" class="nav-link" data-scroll-target="#writing-the-pinned-project">Writing the pinned project</a></li>
+  <li><a href="#checking-a-lock" id="toc-checking-a-lock" class="nav-link" data-scroll-target="#checking-a-lock">Checking a lock</a></li>
+  <li><a href="#the-manifest" id="toc-the-manifest" class="nav-link" data-scroll-target="#the-manifest">The manifest</a></li>
+  <li><a href="#signing" id="toc-signing" class="nav-link" data-scroll-target="#signing">Signing</a></li>
+  <li><a href="#fixtures-and-dev-locks" id="toc-fixtures-and-dev-locks" class="nav-link" data-scroll-target="#fixtures-and-dev-locks">Fixtures and dev locks</a></li>
+  <li><a href="#the-smoke-test" id="toc-the-smoke-test" class="nav-link" data-scroll-target="#the-smoke-test">The smoke test</a></li>
+  <li><a href="#the-env-from-a-copy" id="toc-the-env-from-a-copy" class="nav-link" data-scroll-target="#the-env-from-a-copy">The env from a copy</a></li>
+  <li><a href="#the-channel" id="toc-the-channel" class="nav-link" data-scroll-target="#the-channel">The channel</a></li>
+  <li><a href="#checking-a-built-app" id="toc-checking-a-built-app" class="nav-link" data-scroll-target="#checking-a-built-app">Checking a built app</a></li>
+  <li><a href="#the-command-line" id="toc-the-command-line" class="nav-link" data-scroll-target="#the-command-line">The command line</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="lock.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">lock</h1>
+</div>
+
+<div>
+  <div class="description">
+    The signed environment lock of a thin app: make, check, test, diff, publish, promote, verify, and its signing keys
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>A thin app gets its Python packages from a lock: a pinned project (<code>pyproject.toml</code>, <code>uv.lock</code>, <code>.python-version</code>) and a signed <code>manifest.json</code>. A new lock reaches people with no new app build. <code>contract/api-1.md</code> gives the formats; this module makes and checks locks, smoke-tests one as the launcher builds it, signs it with SSH keys, and publishes it on the app’s GitHub releases.</p>
+<p>Everything app-specific comes from a <a href="https://vedicreader.github.io/kavacha/thin.html#thin"><code>Thin</code></a> spec. An app adds its own checks in a hooks file (<code>Thin.hooks</code>): <code>extra_reqs()</code> gives each extra’s requirements, <code>checks(s, base, port)</code> runs against the first server, and <code>smoke(s)</code> runs more checks after it.</p>
+<section id="small-helpers" class="level3">
+<h3 class="anchored" data-anchor-id="small-helpers">Small helpers</h3>
+<div id="f3bc51cb" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.474297+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.506495+00:00&quot;,&quot;total&quot;:0.032202189000003045}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L32" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="asset_name" class="level3">
+<h3 class="anchored" data-anchor-id="asset_name">asset_name</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> asset_name(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    f</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="33d6849d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.506619+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.509670+00:00&quot;,&quot;total&quot;:0.0030533810000008543}}" data-execution_count="5">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L31" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="uv_version" class="level3">
+<h3 class="anchored" data-anchor-id="uv_version">uv_version</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> uv_version(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    uv</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="a2c2074c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.509764+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.512277+00:00&quot;,&quot;total&quot;:0.0025156899999956295}}" data-execution_count="6">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L30" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="dumps" class="level3">
+<h3 class="anchored" data-anchor-id="dumps">dumps</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dumps(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    o</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="704ce07d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.512349+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.514257+00:00&quot;,&quot;total&quot;:0.0019106769999979178}}" data-execution_count="7">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L29" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="iso" class="level3">
+<h3 class="anchored" data-anchor-id="iso">iso</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> iso(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    t</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="60427cfc" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.514326+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.516205+00:00&quot;,&quot;total&quot;:0.0018805730000011067}}" data-execution_count="8">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L28" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="now" class="level3">
+<h3 class="anchored" data-anchor-id="now">now</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> now():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="c9bd193e" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.516277+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.518187+00:00&quot;,&quot;total&quot;:0.0019120299999997314}}" data-execution_count="9">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L27" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="sha256" class="level3">
+<h3 class="anchored" data-anchor-id="sha256">sha256</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sha256(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    p</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="284a6ff9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.518256+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.520914+00:00&quot;,&quot;total&quot;:0.0026598139999975956}}" data-execution_count="10">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L21" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="sh" class="level3">
+<h3 class="anchored" data-anchor-id="sh">sh</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sh(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>cmd, check:<span class="bu">bool</span><span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kw</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Run <code>cmd</code>; its stdout, stripped.</em></p>
+</section>
+</div>
+</section>
+<section id="the-lock-hash" class="level3">
+<h3 class="anchored" data-anchor-id="the-lock-hash">The lock hash</h3>
+<p>The lock hash is sha256 over the name and the bytes of each lock file, then <code>uv</code> and the uv version. The launcher computes the same value; <code>contract/fixtures/lock_hash</code> pins one vector for every side.</p>
+<div id="388992bf" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.521780+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.524416+00:00&quot;,&quot;total&quot;:0.0026383630000026415}}" data-execution_count="12">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L35" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="lock_hash" class="level3">
+<h3 class="anchored" data-anchor-id="lock_hash">lock_hash</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lock_hash(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    d, uv</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>sha256 over the names and contents of the lock files, then the uv version.</em></p>
+</section>
+</div>
+<div id="75f8017f" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.524641+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.525739+00:00&quot;,&quot;total&quot;:0.0010997890000012944}}" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> Path(tempfile.mkdtemp())</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>(d<span class="op">/</span><span class="st">'pyproject.toml'</span>).write_text(<span class="st">'p'</span>)<span class="op">;</span> (d<span class="op">/</span><span class="st">'uv.lock'</span>).write_text(<span class="st">'l'</span>)<span class="op">;</span> (d<span class="op">/</span><span class="st">'.python-version'</span>).write_text(<span class="st">'3.12.16</span><span class="ch">\n</span><span class="st">'</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>test_eq(lock_hash(d, <span class="st">'0.13.6'</span>), <span class="st">'2b6ad4d75869cd770d5cf35be37c47dc40fe7cfce61490729959b38333e9472a'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="platforms-and-wheels" class="level3">
+<h3 class="anchored" data-anchor-id="platforms-and-wheels">Platforms and wheels</h3>
+<p>A platform such as <code>darwin-arm64</code> gives the uv environment marker and the wheel tags that install there.</p>
+<div id="2f22a9ba" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.528178+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.531861+00:00&quot;,&quot;total&quot;:0.0036862850000005665}}" data-execution_count="15">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L50" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="wheel_fits" class="level3">
+<h3 class="anchored" data-anchor-id="wheel_fits">wheel_fits</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wheel_fits(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    fn, python:<span class="bu">str</span><span class="op">=</span><span class="st">'3.13.18'</span>, platform:<span class="bu">str</span><span class="op">=</span><span class="st">'darwin-arm64'</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Whether a wheel filename installs on <code>python</code> and <code>platform</code>.</em></p>
+</section>
+</div>
+<div id="3acc82f8" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.531956+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.534576+00:00&quot;,&quot;total&quot;:0.002623390000003667}}" data-execution_count="16">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L48" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="marker" class="level3">
+<h3 class="anchored" data-anchor-id="marker">marker</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> marker(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    platform</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="ca996339" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>test_eq([wheel_fits(f) <span class="cf">for</span> f <span class="kw">in</span> (<span class="st">'a-1.0-cp313-cp313-macosx_11_0_arm64.whl'</span>, <span class="st">'a-1.0-cp39-abi3-macosx_10_12_universal2.whl'</span>, <span class="st">'a-1.0-cp312-cp312-macosx_11_0_arm64.whl'</span>)], [<span class="va">True</span>, <span class="va">True</span>, <span class="va">False</span>])</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>test_eq(wheel_fits(<span class="st">'a-1.0-cp313-cp313-win_amd64.whl'</span>, platform<span class="op">=</span><span class="st">'win32-x64'</span>), <span class="va">True</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>test_eq(wheel_fits(<span class="st">'a-1.0-cp313-cp313-manylinux_2_17_x86_64.whl'</span>, platform<span class="op">=</span><span class="st">'linux-x64'</span>), <span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-lock-tool" class="level3">
+<h3 class="anchored" data-anchor-id="the-lock-tool">The lock tool</h3>
+<p><a href="https://vedicreader.github.io/kavacha/lock.html#lock"><code>Lock</code></a> holds one app’s spec and the folders that follow from it. Its methods are the lock tool’s commands. <a href="https://vedicreader.github.io/kavacha/lock.html#lock.hooks"><code>Lock.hooks</code></a> loads the app’s hooks file once.</p>
+<div id="a322c9db" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.537381+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.540967+00:00&quot;,&quot;total&quot;:0.0035891299999946114}}" data-execution_count="18">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L61" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="lock" class="level3">
+<h3 class="anchored" data-anchor-id="lock">Lock</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Lock(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    t:Thin, root:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The lock tool for one thin app.</em></p>
+</section>
+</div>
+<p>The pinned uv is the one the app ships: <code>&lt;PREFIX&gt;UV</code>, else the app’s build folder. A uv of another version is refused, so a lock is never made or tested with a uv the app does not have.</p>
+</section>
+<section id="the-child-environment" class="level3">
+<h3 class="anchored" data-anchor-id="the-child-environment">The child environment</h3>
+<p><code>child_env</code> is what the launcher’s own uv runs get, and <code>server_env</code> is what the server gets: the person’s environment, less the dropped names, with the tool folders on <code>PATH</code>. <code>server_env_old</code> is what launcher 1.0.0 gave its server; a newer lock must still run under it.</p>
+<div id="ae57cf8c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>lk <span class="op">=</span> Lock(Thin(<span class="st">'Demo'</span>, repo<span class="op">=</span><span class="st">'me/demo'</span>), d)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>e <span class="op">=</span> lk.child_env(<span class="bu">dict</span>(PATH<span class="op">=</span><span class="st">'/usr/bin'</span>, VIRTUAL_ENV<span class="op">=</span><span class="st">'/v'</span>, UV_INDEX_URL<span class="op">=</span><span class="st">'x'</span>, DEMO_HOST_TOKEN<span class="op">=</span><span class="st">'t'</span>), cache<span class="op">=</span><span class="st">'/c'</span>, python<span class="op">=</span><span class="st">'/py'</span>, python_version<span class="op">=</span><span class="st">'3.13.18'</span>, env<span class="op">=</span><span class="st">'/e'</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>test_eq((<span class="st">'VIRTUAL_ENV'</span> <span class="kw">in</span> e, <span class="st">'UV_INDEX_URL'</span> <span class="kw">in</span> e, <span class="st">'DEMO_HOST_TOKEN'</span> <span class="kw">in</span> e, e[<span class="st">'UV_PROJECT_ENVIRONMENT'</span>]), (<span class="va">False</span>, <span class="va">False</span>, <span class="va">False</span>, <span class="st">'/e'</span>))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>test_eq(lk.sync_args(<span class="st">'/l'</span>, [<span class="st">'a'</span>], inexact<span class="op">=</span><span class="va">True</span>)[<span class="op">-</span><span class="dv">3</span>:], [<span class="st">'--inexact'</span>, <span class="st">'--extra'</span>, <span class="st">'a'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="writing-the-pinned-project" class="level3">
+<h3 class="anchored" data-anchor-id="writing-the-pinned-project">Writing the pinned project</h3>
+<p><code>pyproject</code> writes the pinned project for app version <code>v</code>. The app’s package comes from a wheel URL on its GitHub release (or a local wheel, for a lock that cannot be published). The cooldown is <code>exclude-newer</code>, <code>Thin.cooldown</code> days before the lock; the owner’s packages are exempt. A pinned wheel (<code>Thin.wheels</code>) comes by URL.</p>
+<div id="2518e78a" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>lk <span class="op">=</span> Lock(Thin(<span class="st">'Demo'</span>, repo<span class="op">=</span><span class="st">'me/demo'</span>, extras<span class="op">=</span>[<span class="st">'x'</span>], wheels<span class="op">=</span>{<span class="st">'big'</span>: <span class="bu">dict</span>(version<span class="op">=</span><span class="st">'1'</span>, url<span class="op">=</span><span class="st">'https://w/big-1-py3-none-any.whl'</span>, sha256<span class="op">=</span><span class="st">'00'</span>)}), tempfile.mkdtemp())</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> tomllib.loads(lk.pyproject(<span class="st">'1.0'</span>, <span class="st">'https://w/demo.whl'</span>, {<span class="st">'x'</span>: [<span class="st">'big==1'</span>]}, [<span class="st">'mine'</span>], datetime(<span class="dv">2026</span>, <span class="dv">11</span>, <span class="dv">6</span>, tzinfo<span class="op">=</span>timezone.utc)))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>test_eq((p[<span class="st">'project'</span>][<span class="st">'dependencies'</span>], p[<span class="st">'tool'</span>][<span class="st">'uv'</span>][<span class="st">'exclude-newer'</span>], p[<span class="st">'tool'</span>][<span class="st">'uv'</span>][<span class="st">'sources'</span>][<span class="st">'big'</span>]), ([<span class="st">'demo==1.0'</span>], <span class="st">'2026-10-30T00:00:00Z'</span>, {<span class="st">'url'</span>: <span class="st">'https://w/big-1-py3-none-any.whl'</span>}))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="checking-a-lock" class="level3">
+<h3 class="anchored" data-anchor-id="checking-a-lock">Checking a lock</h3>
+<p><a href="https://vedicreader.github.io/kavacha/build.html#check"><code>check</code></a> refuses a lock the app cannot install: another index, an editable, git or path source, a package with no fitting wheel, a pinned wheel in the base env or with another hash, and no required environment. It gives every reason, so one run lists them all.</p>
+<div id="4543284b" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.556101+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.558218+00:00&quot;,&quot;total&quot;:0.0021188280000004056}}" data-execution_count="23">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L168" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="packages" class="level3">
+<h3 class="anchored" data-anchor-id="packages">packages</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> packages(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    d</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<p><code>make</code> writes the pinned project, locks it twice with the pinned uv (the second time with each extra pinned <code>==</code> to what the first chose), checks it, and prints its hash. <code>UV_NO_CONFIG=1</code> drops the settings in <code>[tool.uv]</code>, so the cooldown goes on the command line too.</p>
+<div id="60a7ce27" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.564269+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.566614+00:00&quot;,&quot;total&quot;:0.0023487409999987108}}" data-execution_count="25">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L227" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="cooldown_args" class="level3">
+<h3 class="anchored" data-anchor-id="cooldown_args">cooldown_args</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cooldown_args(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    d</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The pinned project’s cooldown as uv flags, which UV_NO_CONFIG does not drop.</em></p>
+</section>
+</div>
+</section>
+<section id="the-manifest" class="level3">
+<h3 class="anchored" data-anchor-id="the-manifest">The manifest</h3>
+<p><code>manifest</code> is what the launcher checks before it installs a lock. The app’s own version is under the key of its package name, such as <code>leela</code>.</p>
+</section>
+<section id="signing" class="level3">
+<h3 class="anchored" data-anchor-id="signing">Signing</h3>
+<p>The keys are SSH Ed25519 keys in <code>~/.ssh</code>, named by <code>Thin.key_names</code>: main and emergency. Signing is SSHSIG with the namespace <code>Thin.sig_ns</code>, through the SSH agent when it holds the key. The tools check a signature with <code>ssh-keygen -Y verify</code>; the launcher checks SSHSIG itself.</p>
+</section>
+<section id="fixtures-and-dev-locks" class="level3">
+<h3 class="anchored" data-anchor-id="fixtures-and-dev-locks">Fixtures and dev locks</h3>
+<p><a href="https://vedicreader.github.io/kavacha/lock.html#fixtures"><code>fixtures</code></a> writes SSHSIG fixtures with throwaway keys, under a temporary <code>HOME</code>, so no real key or agent is ever used. <code>dev_lock</code> signs a lock with a throwaway key, for a local app build that is not for release.</p>
+<div id="9194e794" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.575833+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.578778+00:00&quot;,&quot;total&quot;:0.002947323000000779}}" data-execution_count="29">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L337" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fixtures" class="level3">
+<h3 class="anchored" data-anchor-id="fixtures">fixtures</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fixtures(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    out, ns:<span class="bu">str</span><span class="op">=</span><span class="st">'app-lock'</span>, platform:<span class="bu">str</span><span class="op">=</span><span class="st">'darwin-arm64'</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>SSHSIG fixtures made by ssh-keygen with throwaway keys under a temporary HOME.</em></p>
+</section>
+</div>
+<div id="360335eb" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> fixtures(Path(tempfile.mkdtemp()))</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>lk <span class="op">=</span> Lock(Thin(<span class="st">'App'</span>), d)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>test_eq(lk.verify_sig(f<span class="op">/</span><span class="st">'message.json'</span>, f<span class="op">/</span><span class="st">'main.sig'</span>, f<span class="op">/</span><span class="st">'keys.pub'</span>), <span class="va">True</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>test_eq([lk.verify_sig(f<span class="op">/</span><span class="st">'message.json'</span>, f<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">.sig'</span>, f<span class="op">/</span><span class="st">'keys.pub'</span>) <span class="cf">for</span> k <span class="kw">in</span> (<span class="st">'emergency'</span>, <span class="st">'stranger'</span>, <span class="st">'wrongns'</span>)], [<span class="va">True</span>, <span class="va">False</span>, <span class="va">False</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-smoke-test" class="level3">
+<h3 class="anchored" data-anchor-id="the-smoke-test">The smoke test</h3>
+<p><code>lock_test</code> builds the env as the launcher does, in a temp folder, with the same uv, child environment and command. Then <code>smoke</code> checks it, and a pass writes a test record for this lock hash. <a href="https://vedicreader.github.io/kavacha/lock.html#smoke"><code>Smoke</code></a> is what a hook gets: the env, the temp folders, and <code>step</code>, <code>serve</code> and the HTTP helpers.</p>
+<div id="269a83a9" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.581406+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.584281+00:00&quot;,&quot;total&quot;:0.0028777090000033922}}" data-execution_count="31">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L378" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fakehost" class="level3">
+<h3 class="anchored" data-anchor-id="fakehost">FakeHost</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> FakeHost(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    token</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The launcher’s control server, enough for a smoke test: every question gets Yes.</em></p>
+</section>
+</div>
+<div id="858e428c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.584355+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.586331+00:00&quot;,&quot;total&quot;:0.001978899000000922}}" data-execution_count="32">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L375" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="free_port" class="level3">
+<h3 class="anchored" data-anchor-id="free_port">free_port</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> free_port():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+<div id="97059716" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.586401+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.588663+00:00&quot;,&quot;total&quot;:0.0022650960000021314}}" data-execution_count="33">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L368" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="live_ports" class="level3">
+<h3 class="anchored" data-anchor-id="live_ports">live_ports</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> live_ports(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    name, home:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The ports of the app the person runs, from its real serving.json: no test may call them.</em></p>
+</section>
+</div>
+<p><a href="https://vedicreader.github.io/kavacha/lock.html#smoke.get"><code>Smoke.get</code></a> and <a href="https://vedicreader.github.io/kavacha/lock.html#smoke.post"><code>Smoke.post</code></a> never reach the app the person runs: a port in its <code>serving.json</code> is refused. Proxies are never used.</p>
+<div id="c72643f7" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.591681+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.594138+00:00&quot;,&quot;total&quot;:0.0024593759999973486}}" data-execution_count="35">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L398" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="smoke" class="level3">
+<h3 class="anchored" data-anchor-id="smoke">Smoke</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Smoke(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    lk, env_dir, results, extras:<span class="bu">tuple</span><span class="op">=</span>(), wait:<span class="bu">int</span><span class="op">=</span><span class="dv">180</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>What a smoke check needs: the env, temp folders, results, and the helpers to start and call a server.</em></p>
+</section>
+</div>
+<p><code>Smoke.serve</code> starts the server from an env as the launcher does: the host variables in its environment, the token as one stdin line, never in argv, the environment, a file or a log. It waits for the health route, runs <code>checks(base, port)</code>, then stops it. A server must stop within 5 s of SIGTERM, with the streams the app’s <code>hold_open(s, base, port)</code> hook names held open, as a window holds them.</p>
+<p><code>Lock.smoke</code> runs the steps every thin app needs, then the app’s hooks: <code>uv pip check</code>, the imports, the first server with the app’s <code>checks</code>, then the app’s <code>smoke(s)</code>, then each extra’s check (<code>extra_check(x)</code> gives Python arguments, else <code>import x</code>).</p>
+</section>
+<section id="the-env-from-a-copy" class="level3">
+<h3 class="anchored" data-anchor-id="the-env-from-a-copy">The env from a copy</h3>
+<p>The launcher builds a new lock’s env from an APFS clone of the env in use. <a href="https://vedicreader.github.io/kavacha/lock.html#seed"><code>seed</code></a> does the same here: a clone with the old path rewritten in <code>bin/</code> and <code>pyvenv.cfg</code>, and no bytecode. <code>incremental</code> then adds one extra with <code>uv sync</code> and checks that the copy installs only that, works, and names only itself.</p>
+<div id="65a67cf7" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.604406+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.606822+00:00&quot;,&quot;total&quot;:0.002417953999994893}}" data-execution_count="39">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L508" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="seed" class="level3">
+<h3 class="anchored" data-anchor-id="seed">seed</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> seed(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    a, b</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em><code>b</code> as a clone of env <code>a</code>, with <code>a</code>’s path rewritten in bin/ and pyvenv.cfg, and no bytecode.</em></p>
+</section>
+</div>
+<p><code>test_code_hash</code> covers the harness (this module), the app’s hooks file and its child environment, so a record from other test code is refused at publish.</p>
+<div id="d9c5733c" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.610542+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.612455+00:00&quot;,&quot;total&quot;:0.001915384999996661}}" data-execution_count="41">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L553" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="platform_mac" class="level3">
+<h3 class="anchored" data-anchor-id="platform_mac">platform_mac</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> platform_mac():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</div>
+</section>
+<section id="the-channel" class="level3">
+<h3 class="anchored" data-anchor-id="the-channel">The channel</h3>
+<p>Each lock is a release <code>lock-&lt;n&gt;</code>; the release <code>lock-channel</code> holds the signed pointers <code>channel.json</code> and <code>channel-test.json</code>. A pointer names its channel, so a test pointer served as stable is refused. <code>gh</code> runs with the keyring’s sign-in, never a <code>GITHUB_TOKEN</code> from the environment.</p>
+<div id="72199c1f" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.614709+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.616763+00:00&quot;,&quot;total&quot;:0.0020563849999959416}}" data-execution_count="43">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L594" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="pointer" class="level3">
+<h3 class="anchored" data-anchor-id="pointer">pointer</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pointer(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    n, manifest_sha, name, at:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A channel pointer; it names its channel.</em></p>
+</section>
+</div>
+<div id="51aa170d" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.616832+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.618908+00:00&quot;,&quot;total&quot;:0.002078038000000504}}" data-execution_count="44">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L588" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="fetch" class="level3">
+<h3 class="anchored" data-anchor-id="fetch">fetch</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fetch(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    url, dst:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>The bytes at <code>url</code>, also written to <code>dst</code>.</em></p>
+</section>
+</div>
+<p><code>refusals</code> is every reason <code>publish</code> refuses: no public keys, no signing key, a failed check, a tree that is not clean and pushed, no fresh passing record from this uv and this test code, and a lower app version than the last lock (unless <code>allow_downgrade</code>).</p>
+<p><code>publish</code> signs the lock as <code>lock-&lt;n&gt;</code>, checks what GitHub serves, then points the test channel at it. <code>promote</code> copies the test pointer to stable. <code>verify</code> checks a channel as the app does.</p>
+<p><code>diff</code> lists what changed against the published lock. An owner package version with no git tag in <code>Thin.owner_org</code> is flagged. <code>wheel</code> builds the app’s wheel from a tag in a clean worktree, and attaches it to that release.</p>
+</section>
+<section id="checking-a-built-app" class="level3">
+<h3 class="anchored" data-anchor-id="checking-a-built-app">Checking a built app</h3>
+<p><code>verify_app</code> checks a built bundle without opening it: the plist, the launcher, the pinned uv, the bootstrap lock and its signature, the generated files, and the size gates of the spec. A bundle whose keys are not the committed keys is signed with a throwaway key, and it says so.</p>
+</section>
+<section id="the-command-line" class="level3">
+<h3 class="anchored" data-anchor-id="the-command-line">The command line</h3>
+<p><code>kavacha lock &lt;command&gt;</code> runs in the app’s folder (or <code>--root</code>). Each command is one method above.</p>
+<div id="244a3818" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-11-07T09:50:47.636591+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-07T09:50:47.640955+00:00&quot;,&quot;total&quot;:0.004367619999996464}}" data-execution_count="50">
+<hr>
+<p><a href="https://github.com/vedicreader/kavacha/blob/main/kavacha/lock.py#L776" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="main" class="level3">
+<h3 class="anchored" data-anchor-id="main">main</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    argv:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>kavacha lock make|hash|check|test|diff|publish|promote|verify|key|dev-lock|fetch|wheel|fixtures|verify-app</em></p>
+</section>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/vedicreader\.github\.io\/kavacha");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/vedicreader/kavacha/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
