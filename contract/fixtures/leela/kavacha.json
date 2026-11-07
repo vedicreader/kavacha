@@ -1,0 +1,69 @@
+{
+ "api": 1,
+ "bridge": {
+  "flag": "__leela",
+  "handler": "leela",
+  "js_global": "pywebview",
+  "methods": [
+   "open_folder",
+   "pick_folder",
+   "pick_path",
+   "open_path",
+   "recent",
+   "set_background",
+   "set_title"
+  ]
+ },
+ "capabilities": [
+  "confirm",
+  "grant",
+  "update",
+  "extras"
+ ],
+ "cask": "leela",
+ "channel": "https://github.com/vedicreader/leela/releases/download",
+ "debug_env": "LEELA_WEBVIEW_DEBUG",
+ "env_prefix": "LEELA_",
+ "extras": [
+  "mlx",
+  "llama",
+  "langserver"
+ ],
+ "health": "/health",
+ "identifier": "org.vedicreader.leela",
+ "lock_project": "leela-lock",
+ "marker": ".leela-env.json",
+ "menu_action_js": "leeAct({action})",
+ "menus": "/app/menu.json",
+ "name": "Leela",
+ "python": "3.13",
+ "routes": {
+  "grant": "/hub/grant",
+  "open": "/hub/open",
+  "recent": "/app/recent"
+ },
+ "server": "leela",
+ "sig_ns": "leela-lock",
+ "sites": {
+  "go": "/hub/go/",
+  "list": "/app/sites"
+ },
+ "support": "Leela",
+ "titlebar": {
+  "drag_class": "pywebview-drag-region",
+  "query": "titlebar",
+  "style": "mac-unified"
+ },
+ "window": {
+  "home": "leela:home",
+  "min_size": [
+   900,
+   560
+  ],
+  "size": [
+   1440,
+   900
+  ],
+  "title_prefix": "leela — "
+ }
+}

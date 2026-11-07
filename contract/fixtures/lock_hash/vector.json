@@ -1,0 +1,10 @@
+{
+ "hash": "2b6ad4d75869cd770d5cf35be37c47dc40fe7cfce61490729959b38333e9472a",
+ "others": [
+  {
+   "hash": "0fdb4fd00fcfa9b1fcfacf1ad1563f7eb7c203c007917fa897393078889b883d",
+   "uv": "0.13.7"
+  }
+ ],
+ "uv": "0.13.6"
+}

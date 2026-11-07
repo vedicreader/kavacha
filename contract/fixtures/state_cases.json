@@ -1,0 +1,129 @@
+{
+ "load": [
+  {
+   "name": "an old state.json with only some keys loads",
+   "json": {
+    "current": "aa",
+    "highest_n": 3
+   },
+   "want": {
+    "current": "aa",
+    "previous": null,
+    "pending": null,
+    "highest_n": 3,
+    "bad": [],
+    "extras": [],
+    "early_crashes": 0
+   }
+  },
+  {
+   "name": "an empty state is the first launch",
+   "json": {},
+   "want": {
+    "current": null,
+    "previous": null,
+    "pending": null,
+    "highest_n": -1,
+    "bad": [],
+    "extras": [],
+    "early_crashes": 0
+   }
+  }
+ ],
+ "moves": [
+  {
+   "name": "a pending env becomes current at launch",
+   "built": [
+    "a",
+    "b"
+   ],
+   "before": {
+    "current": "a",
+    "pending": "b",
+    "locks": {
+     "a": 1,
+     "b": 2
+    },
+    "highest_n": 1
+   },
+   "op": "switch_at_launch",
+   "after": {
+    "current": "b",
+    "previous": "a",
+    "pending": null,
+    "highest_n": 2
+   }
+  },
+  {
+   "name": "a bad pending env is not switched to",
+   "built": [
+    "a",
+    "b"
+   ],
+   "before": {
+    "current": "a",
+    "pending": "b",
+    "bad": [
+     "b"
+    ]
+   },
+   "op": "switch_at_launch",
+   "after": {
+    "current": "a",
+    "pending": null
+   }
+  },
+  {
+   "name": "rollback marks the current env bad",
+   "built": [
+    "a",
+    "b"
+   ],
+   "before": {
+    "current": "b",
+    "previous": "a"
+   },
+   "op": "rollback_bad",
+   "after": {
+    "current": "a",
+    "previous": null,
+    "bad": [
+     "b"
+    ]
+   }
+  },
+  {
+   "name": "use previous version holds the current env",
+   "built": [
+    "a",
+    "b"
+   ],
+   "before": {
+    "current": "b",
+    "previous": "a"
+   },
+   "op": "rollback_held",
+   "after": {
+    "current": "a",
+    "previous": "b",
+    "held": [
+     "b"
+    ]
+   }
+  },
+  {
+   "name": "no previous env: no rollback",
+   "built": [
+    "b"
+   ],
+   "before": {
+    "current": "b"
+   },
+   "op": "rollback_bad",
+   "after": {
+    "current": "b",
+    "bad": []
+   }
+  }
+ ]
+}

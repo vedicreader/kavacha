@@ -1,0 +1,253 @@
+[
+ {
+  "extra": {
+   "DEMO_APP_VERSION": "1.0.0"
+  },
+  "home": "/h",
+  "lock": "/l",
+  "parent": {
+   "CONDA_PREFIX": "c",
+   "DEMO_HOST_TOKEN": "t",
+   "DEMO_LOCK_CHANNEL": "test",
+   "HOME": "/h",
+   "OPENAI_API_KEY": "k",
+   "PATH": "/usr/bin:/x",
+   "PYTHONPATH": "p",
+   "UV_INDEX_URL": "x",
+   "VIRTUAL_ENV": "/v"
+  },
+  "port": 4567,
+  "server_args": [
+   "--app",
+   "--port",
+   "4567"
+  ],
+  "server_env": {
+   "DEMO_APP_VERSION": "1.0.0",
+   "HOME": "/h",
+   "OPENAI_API_KEY": "k",
+   "PATH": "/h/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/x",
+   "PYTHONUNBUFFERED": "1"
+  },
+  "spec": {
+   "api": 1,
+   "drop": [
+    "VIRTUAL_ENV",
+    "CONDA_PREFIX",
+    "PYTHONHOME",
+    "PYTHONPATH",
+    "PYTHONSTARTUP",
+    "PYTHONUSERBASE",
+    "PYTHONEXECUTABLE",
+    "__PYVENV_LAUNCHER__"
+   ],
+   "drop_prefixes": [
+    "UV_",
+    "DEMO_HOST_",
+    "DEMO_LOCK_",
+    "DEMO_ENV_",
+    "DEMO_APP_"
+   ],
+   "extra": [
+    "--extra",
+    "{name}"
+   ],
+   "inexact": [
+    "--inexact"
+   ],
+   "server": {
+    "PYTHONUNBUFFERED": "1"
+   },
+   "server_args": [
+    "--app",
+    "--port",
+    "{port}"
+   ],
+   "set": {
+    "LANG": "en_US.UTF-8",
+    "NO_COLOR": "1"
+   },
+   "sync": [
+    "sync",
+    "--frozen",
+    "--no-install-project",
+    "--project",
+    "{lock}"
+   ],
+   "tool_dirs": [
+    "~/.local/bin",
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin"
+   ],
+   "uv": {
+    "UV_CACHE_DIR": "{cache}",
+    "UV_FROZEN": "1",
+    "UV_LINK_MODE": "hardlink",
+    "UV_NO_CONFIG": "1",
+    "UV_NO_PROGRESS": "1",
+    "UV_PROJECT_ENVIRONMENT": "{env}",
+    "UV_PYTHON": "{python_version}",
+    "UV_PYTHON_INSTALL_DIR": "{python}",
+    "UV_PYTHON_PREFERENCE": "only-managed"
+   }
+  },
+  "sync": [
+   "sync",
+   "--frozen",
+   "--no-install-project",
+   "--project",
+   "/l",
+   "--inexact",
+   "--extra",
+   "a"
+  ],
+  "uv_env": {
+   "HOME": "/h",
+   "LANG": "en_US.UTF-8",
+   "NO_COLOR": "1",
+   "OPENAI_API_KEY": "k",
+   "PATH": "/h/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/x",
+   "UV_CACHE_DIR": "/c",
+   "UV_FROZEN": "1",
+   "UV_LINK_MODE": "hardlink",
+   "UV_NO_CONFIG": "1",
+   "UV_NO_PROGRESS": "1",
+   "UV_PROJECT_ENVIRONMENT": "/e",
+   "UV_PYTHON": "3.13.18",
+   "UV_PYTHON_INSTALL_DIR": "/py",
+   "UV_PYTHON_PREFERENCE": "only-managed"
+  },
+  "vals": {
+   "cache": "/c",
+   "env": "/e",
+   "python": "/py",
+   "python_version": "3.13.18"
+  }
+ },
+ {
+  "extra": {
+   "DEMO_APP_VERSION": "1.0.0"
+  },
+  "home": "/h",
+  "lock": "/l",
+  "parent": {
+   "HOME": "/h",
+   "LANG": "de_DE.UTF-8",
+   "NO_COLOR": "0",
+   "PATH": "/usr/local/bin:/usr/bin"
+  },
+  "port": 4567,
+  "server_args": [
+   "--app",
+   "--port",
+   "4567"
+  ],
+  "server_env": {
+   "DEMO_APP_VERSION": "1.0.0",
+   "HOME": "/h",
+   "LANG": "de_DE.UTF-8",
+   "NO_COLOR": "0",
+   "PATH": "/h/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+   "PYTHONUNBUFFERED": "1"
+  },
+  "spec": {
+   "api": 1,
+   "drop": [
+    "VIRTUAL_ENV",
+    "CONDA_PREFIX",
+    "PYTHONHOME",
+    "PYTHONPATH",
+    "PYTHONSTARTUP",
+    "PYTHONUSERBASE",
+    "PYTHONEXECUTABLE",
+    "__PYVENV_LAUNCHER__"
+   ],
+   "drop_prefixes": [
+    "UV_",
+    "DEMO_HOST_",
+    "DEMO_LOCK_",
+    "DEMO_ENV_",
+    "DEMO_APP_"
+   ],
+   "extra": [
+    "--extra",
+    "{name}"
+   ],
+   "inexact": [
+    "--inexact"
+   ],
+   "server": {
+    "PYTHONUNBUFFERED": "1"
+   },
+   "server_args": [
+    "--app",
+    "--port",
+    "{port}"
+   ],
+   "set": {
+    "LANG": "en_US.UTF-8",
+    "NO_COLOR": "1"
+   },
+   "sync": [
+    "sync",
+    "--frozen",
+    "--no-install-project",
+    "--project",
+    "{lock}"
+   ],
+   "tool_dirs": [
+    "~/.local/bin",
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin"
+   ],
+   "uv": {
+    "UV_CACHE_DIR": "{cache}",
+    "UV_FROZEN": "1",
+    "UV_LINK_MODE": "hardlink",
+    "UV_NO_CONFIG": "1",
+    "UV_NO_PROGRESS": "1",
+    "UV_PROJECT_ENVIRONMENT": "{env}",
+    "UV_PYTHON": "{python_version}",
+    "UV_PYTHON_INSTALL_DIR": "{python}",
+    "UV_PYTHON_PREFERENCE": "only-managed"
+   }
+  },
+  "sync": [
+   "sync",
+   "--frozen",
+   "--no-install-project",
+   "--project",
+   "/l",
+   "--inexact",
+   "--extra",
+   "a"
+  ],
+  "uv_env": {
+   "HOME": "/h",
+   "LANG": "de_DE.UTF-8",
+   "NO_COLOR": "0",
+   "PATH": "/h/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+   "UV_CACHE_DIR": "/c",
+   "UV_FROZEN": "1",
+   "UV_LINK_MODE": "hardlink",
+   "UV_NO_CONFIG": "1",
+   "UV_NO_PROGRESS": "1",
+   "UV_PROJECT_ENVIRONMENT": "/e",
+   "UV_PYTHON": "3.13.18",
+   "UV_PYTHON_INSTALL_DIR": "/py",
+   "UV_PYTHON_PREFERENCE": "only-managed"
+  },
+  "vals": {
+   "cache": "/c",
+   "env": "/e",
+   "python": "/py",
+   "python_version": "3.13.18"
+  }
+ }
+]

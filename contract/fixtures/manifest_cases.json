@@ -1,0 +1,89 @@
+{
+ "manifests": [
+  {
+   "name": "good",
+   "set": {},
+   "want": "ok"
+  },
+  {
+   "name": "a lower lock number is a replay",
+   "set": {},
+   "highest": 7,
+   "want": "replay"
+  },
+  {
+   "name": "another platform",
+   "set": {
+    "platform": "win32-x64"
+   },
+   "want": "platform"
+  },
+  {
+   "name": "a newer macOS",
+   "set": {
+    "macos_min": "99.0"
+   },
+   "want": "macOS"
+  },
+  {
+   "name": "a newer uv needs a newer app",
+   "set": {
+    "uv_min": "0.99.0"
+   },
+   "want": "needsApp",
+   "hash_uv": "0.99.0"
+  },
+  {
+   "name": "a newer launcher API needs a newer app",
+   "set": {
+    "launcher_api_min": 2
+   },
+   "want": "needsApp"
+  },
+  {
+   "name": "a wrong lock hash",
+   "set": {
+    "hash": "0000000000000000000000000000000000000000000000000000000000000000"
+   },
+   "want": "lockHash"
+  },
+  {
+   "name": "a wrong file hash",
+   "set": {
+    "files": {
+     "uv.lock": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+   },
+   "want": "fileHash"
+  },
+  {
+   "name": "a hash that failed before",
+   "set": {},
+   "bad": true,
+   "want": "bad"
+  }
+ ],
+ "pointers": [
+  {
+   "name": "a stable pointer",
+   "channel": "channel",
+   "asked": "channel",
+   "want": "ok"
+  },
+  {
+   "name": "a test pointer served as stable",
+   "channel": "channel-test",
+   "asked": "channel",
+   "want": "pointer"
+  },
+  {
+   "name": "an old expires field is ignored",
+   "channel": "channel",
+   "asked": "channel",
+   "extra": {
+    "expires": "2020-01-01T00:00:00Z"
+   },
+   "want": "ok"
+  }
+ ]
+}

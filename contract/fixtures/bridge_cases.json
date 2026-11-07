@@ -1,0 +1,127 @@
+[
+ {
+  "body": {
+   "method": "open_folder",
+   "args": [
+    "/x"
+   ]
+  },
+  "action": {
+   "open_folder": "/x"
+  }
+ },
+ {
+  "body": {
+   "method": "open_folder",
+   "args": [
+    ""
+   ]
+  },
+  "action": {
+   "unknown": "open_folder"
+  }
+ },
+ {
+  "body": {
+   "method": "open_folder",
+   "args": []
+  },
+  "action": {
+   "unknown": "open_folder"
+  }
+ },
+ {
+  "body": {
+   "method": "pick_folder"
+  },
+  "action": {
+   "pick_folder": true
+  }
+ },
+ {
+  "body": {
+   "method": "pick_path",
+   "args": []
+  },
+  "action": {
+   "pick_path": true
+  }
+ },
+ {
+  "body": {
+   "method": "open_path",
+   "args": [
+    "/a/b.png"
+   ]
+  },
+  "action": {
+   "open_path": "/a/b.png"
+  }
+ },
+ {
+  "body": {
+   "method": "recent",
+   "args": []
+  },
+  "action": {
+   "recent": true
+  }
+ },
+ {
+  "body": {
+   "method": "set_background",
+   "args": [
+    "#1a2B3c"
+   ]
+  },
+  "action": {
+   "set_background": "#1a2B3c"
+  }
+ },
+ {
+  "body": {
+   "method": "set_background",
+   "args": [
+    "red; x"
+   ]
+  },
+  "action": {
+   "unknown": "set_background"
+  }
+ },
+ {
+  "body": {
+   "method": "set_title",
+   "args": [
+    "a — x",
+    "http://127.0.0.1:5010/"
+   ]
+  },
+  "action": {
+   "set_title": "a — x",
+   "url": "http://127.0.0.1:5010/"
+  }
+ },
+ {
+  "body": {
+   "method": "set_title",
+   "args": [
+    "a"
+   ]
+  },
+  "action": {
+   "set_title": "a"
+  }
+ },
+ {
+  "body": {
+   "method": "eval",
+   "args": [
+    "x"
+   ]
+  },
+  "action": {
+   "unknown": "eval"
+  }
+ }
+]
