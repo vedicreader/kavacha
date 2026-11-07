@@ -10,6 +10,8 @@
 - `kavacha lock make|hash|check|test|diff|publish|promote|verify|key|dev-lock|fetch|wheel|fixtures|verify-app` makes, tests, signs and publishes a lock. An app adds its own checks in a hooks file (`Thin.hooks`); the test record's code hash covers the hooks too.
 - `kavacha ship mac` builds, signs and checks a bundle; `--release V` also notarizes, staples, uploads to `app-v<V>` and writes the cask.
 - `swift/` is the launcher, from Leela 1.0, with its history: `KavachaCore`, `KavachaApp` and the `kavacha-launcher` executable, configured by `kavacha.json`, and the same code as SwiftPM libraries (`Package.swift` at the root). `kavacha-launcher --check-menu <menu.json>` checks a menu bar with no window. `make -C swift test` runs the Swift tests.
+- The launcher's title bar is a spec setting (`titlebar = "mac-unified"` or `native`). Unified: transparent with a hidden title over a full-size content view and an empty unified toolbar, the style in the first URL (`?titlebar=mac-unified`) and from the `titlebar` bridge call, and a mouse-down on an element with the class `pywebview-drag-region` drags the window (a double-click does what `AppleActionOnDoubleClick` says). The window title is still set.
+- Every file panel of the launcher is a sheet on the window that asked, so a tiling window manager does not move the app away.
 - `launcher_json()` gives `LAUNCHER_ROWS` as menu rows.
 
 ## 0.0.16

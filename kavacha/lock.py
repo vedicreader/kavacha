@@ -504,7 +504,7 @@ def _smoke(self, env_dir, results, extras=(), wait=180):
     return ok
 Lock.smoke = _smoke
 
-# %% ../nbs/09_lock.ipynb #033bd6f2
+# %% ../nbs/09_lock.ipynb #900ac5db
 def seed(a, b):
     "`b` as a clone of env `a`, with `a`'s path rewritten in bin/ and pyvenv.cfg, and no bytecode."
     sh('cp', '-c', '-R', a, b)
@@ -533,6 +533,7 @@ def _incremental(self, env_a, lock, cache, tmp, uv, results):
         bad += [] if _digest(env_a, srv) == before else ['the env in use changed']
         sh(b/'bin'/'python', '-I', '-c', 'import ' + ', '.join([self.t.package, *self.t.imports]))
         s = Smoke(self, b, [], wait=120)
+        if f := self.hook('prepare'): f(s)
         if f := self.hook('copy_checks'): bad += f(s, b) or []
         if not s.healthy(b): bad.append(f'the server from the copy did not answer {self.t.health}')
         shutil.rmtree(s.tmp, ignore_errors=True)
