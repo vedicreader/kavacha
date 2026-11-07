@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import LeelaCore
+@testable import KavachaCore
 
 @Suite(.serialized) struct ChannelTests {
     func setup() throws -> (FakeHTTP, EnvStore, URL) {
@@ -51,7 +51,7 @@ import Testing
         publish(http, lock: d, n: 3, name: "channel-test")
         #expect(await choose(http, s, bundled).plan?.n == 1, "the stable channel has no pointer")
         #expect(await choose(http, s, bundled, test: true).plan?.n == 3)
-        #expect(Channel.isTest(["LEELA_LOCK_CHANNEL": "test"]) && !Channel.isTest([:]))
+        #expect(Channel.isTest(["APP_LOCK_CHANNEL": "test"]) && !Channel.isTest([:]))
     }
 
     @Test func aPointerWithABadSignatureOrAMismatchedManifestFallsBack() async throws {

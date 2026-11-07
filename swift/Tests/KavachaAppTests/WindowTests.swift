@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import Testing
 import WebKit
-@testable import Leela
+@testable import KavachaApp
 
 @MainActor @Suite(.serialized) struct WindowTests {
     let u = { (s: String) in URL(string: s)! }
@@ -75,7 +75,7 @@ import WebKit
     }
 
     @Test func theNativeContextMenuIsEmptyUnlessTheInspectorIsOn() {
-        let v = LeelaWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let v = KavachaWebView(frame: .zero, configuration: WKWebViewConfiguration())
         let m = NSMenu(); m.addItem(withTitle: "Reload", action: nil, keyEquivalent: "")
         let e = NSEvent.mouseEvent(with: .rightMouseDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
         v.willOpenMenu(m, with: e)
@@ -97,7 +97,7 @@ import WebKit
         let app = AppDelegate(); app.windows.app = app
         let (w, v) = app.windows.make(u("http://127.0.0.1:1/"), title: "t")
         defer { w.close() }
-        let web = try #require(v as? LeelaWebView)
+        let web = try #require(v as? KavachaWebView)
         let dir = FileManager.default.temporaryDirectory.appending(path: "leela-drop-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let f = dir.appending(path: "a.ipynb"); try Data("{}".utf8).write(to: f)
@@ -126,7 +126,7 @@ import WebKit
             try await Task.sleep(for: .milliseconds(250))
             text = (try? await v.evaluateJavaScript("document.body ? document.body.innerText : ''") as? String) ?? ""
         }
-        #expect(text.contains("Leela could not show http://127.0.0.1:2/") && ws.failed.contains(ObjectIdentifier(v)))
+        #expect(text.contains("App could not show http://127.0.0.1:2/") && ws.failed.contains(ObjectIdentifier(v)))
         #expect(ws.reuse(url, title: "leela — b.docx") === w && w.title == "leela — b.docx")
         #expect(!ws.failed.contains(ObjectIdentifier(v)), "the second open loads the page again")
         #expect(ws.reuse(u("http://other.localhost:1/")) == nil && ws.reuse(u("http://127.0.0.1:2/a")) === w)
@@ -189,7 +189,7 @@ import WebKit
         let app = AppDelegate(); app.windows.app = app
         let (w, v) = app.windows.make(u("http://127.0.0.1:1/"), title: "t")
         defer { w.close() }
-        let web = try #require(v as? LeelaWebView)
+        let web = try #require(v as? KavachaWebView)
         let dir = FileManager.default.temporaryDirectory.appending(path: "leela-name-\(UUID().uuidString)/Café")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let f = dir.appending(path: "Screen Recording 2026-11-05 at 8.11.22\u{202F}am.mov"); try Data("x".utf8).write(to: f)

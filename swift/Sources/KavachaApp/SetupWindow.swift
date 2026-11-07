@@ -1,11 +1,11 @@
 import AppKit
-import LeelaCore
+import KavachaCore
 
 /// The first-run and failure window: the phase, a progress bar, uv's last line; on failure the reason, Try Again, Show Log, Copy Details.
 @MainActor
 final class SetupWindow {
     let window: NSWindow
-    let title = NSTextField(labelWithString: "Starting Leela")
+    let title = NSTextField(labelWithString: "Starting \(Kavacha.config.name)")
     let detail = NSTextField(wrappingLabelWithString: "")
     let bar = NSProgressIndicator()
     let retry = NSButton(title: "Try Again", target: nil, action: nil)
@@ -16,7 +16,7 @@ final class SetupWindow {
 
     init() {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 220), styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "Leela"
+        window.title = Kavacha.config.name
         window.isReleasedWhenClosed = false
         title.font = .systemFont(ofSize: 17, weight: .semibold)
         detail.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
@@ -45,11 +45,11 @@ final class SetupWindow {
             if let f = s.fraction { bar.isIndeterminate = false; bar.doubleValue = f * 100 } else { bar.isIndeterminate = true; bar.startAnimation(nil) }
             switch s { case .packages(_, _, let line), .installing(_, let line): detail.stringValue = line; default: detail.stringValue = "" }
             failed = false
-        case .starting, .idle: title.stringValue = "Starting Leela"; detail.stringValue = ""; bar.isIndeterminate = true; bar.startAnimation(nil); failed = false
-        case .offline: title.stringValue = "Leela needs the internet"; detail.stringValue = Setup.offline; failed = true
+        case .starting, .idle: title.stringValue = "Starting \(Kavacha.config.name)"; detail.stringValue = ""; bar.isIndeterminate = true; bar.startAnimation(nil); failed = false
+        case .offline: title.stringValue = "\(Kavacha.config.name) needs the internet"; detail.stringValue = Setup.offline; failed = true
         case .failed(let why):
             let parts = why.components(separatedBy: "\n\n")
-            title.stringValue = parts.first ?? "Leela did not start"
+            title.stringValue = parts.first ?? "\(Kavacha.config.name) did not start"
             detail.stringValue = parts.dropFirst().joined(separator: "\n\n")
             failed = true
         case .ready: window.orderOut(nil); return

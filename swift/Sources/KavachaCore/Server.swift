@@ -13,11 +13,11 @@ public struct HostInfo: Sendable {
 }
 
 public enum ServerCommand {
-    /// `leela --app --shell none --port <port>` from env `hash`, with the token as its first stdin line
-    public static func launch(store: EnvStore, port: Int, hash: String, host: HostInfo) -> Launch {
-        let n = store.load().locks[hash] ?? 0
-        let extra = ["LEELA_HOST_URL": host.url, "LEELA_APP_VERSION": host.appVersion, "LEELA_APP_BUNDLE": host.bundle,
-                     "LEELA_LOCK_N": String(n), "LEELA_ENV_HASH": hash, "LEELA_UV": host.uv.path]
+    /// `<server> <server_args>` from env `hash`, with the token as its first stdin line
+    public static func launch(store: EnvStore, port: Int, hash: String, host: HostInfo, prefix: String = Kavacha.config.env_prefix) -> Launch {
+        let n = store.load().locks[hash] ?? 0, p = prefix
+        let extra = [p + "HOST_URL": host.url, p + "APP_VERSION": host.appVersion, p + "APP_BUNDLE": host.bundle,
+                     p + "LOCK_N": String(n), p + "ENV_HASH": hash, p + "UV": host.uv.path]
         return Launch(executable: store.paths.server(hash), args: store.spec.serverArgs(port: port),
                       env: store.spec.serverEnv(store.parent, home: store.home, extra: extra),
                       cwd: store.paths.support, stdinLine: host.token)

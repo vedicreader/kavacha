@@ -1,12 +1,15 @@
 import AppKit
-import LeelaCore
+import KavachaCore
 import Network
 
 /// The launcher: one supervisor, the control server, the windows, the menus, open events, updates.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
+    var cfg: LauncherConfig { Kavacha.config }
+    /// the server's sites, when its windows each have a port of their own
+    func sites() async -> [String: Any]? { guard let p = cfg.sites["list"] else { return nil }; return await get(p) }
     let bundle = Bundle.main
-    let paths = Paths.user
+    let paths = Paths.user()
     var store: EnvStore!
     var sup: Supervisor!
     var control: ControlServer!
@@ -29,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
 
     func applicationDidFinishLaunching(_ n: Notification) {
         guard let lock = RunLock(paths.runLock) else {
-            let a = NSAlert(); a.messageText = "Leela is already open."; a.runModal()
+            let a = NSAlert(); a.messageText = "\(Kavacha.config.name) is already open."; a.runModal()
             return NSApp.terminate(nil)
         }
         runLock = lock
@@ -39,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
         let uv = bundle.bundleURL.appending(path: "Contents/Helpers/uv")
         guard let spec = try? ChildEnv.load(res.appending(path: "childenv.json")), let keys = try? SSHKey.load(res.appending(path: "lock-keys.pub")),
               let uvLine = Run.output(uv, ["--version"]), let uvVersion = uvLine.split(separator: " ").dropFirst().first.map(String.init) else {
-            return setup.show(.failed("This copy of Leela is damaged. Install it again.\n\nThe bundled uv, childenv.json or lock-keys.pub is missing."))
+            return setup.show(.failed("This copy of \(Kavacha.config.name) is damaged. Install it again.\n\nThe bundled uv, childenv.json or lock-keys.pub is missing."))
         }
         let parent = ProcessInfo.processInfo.environment, home = NSHomeDirectory()
         store = EnvStore(paths: paths, spec: spec, uv: uv, uvVersion: uvVersion, parent: parent, home: home)
@@ -82,11 +85,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
     func ready(_ base: URL) {
         windows.port = sup.port
         Task {
-            for row in await get("/app/sites")?["sites"] as? [[String: Any]] ?? [] { self.windows.learn(row) }
-            if let d = await get("/app/menu.json"), let m = d["menus"] as? [[String: Any]] {
+            for row in await sites()?["sites"] as? [[String: Any]] ?? [] { self.windows.learn(row) }
+            if let d = await get(cfg.menus), let m = d["menus"] as? [[String: Any]] {
                 NSApp.mainMenu = Menus.build(m, launcher: d["launcher"] as? [[String: Any]] ?? Menus.launcher, runner: self.runner, app: self)
             }
-            recent = await get("/app/recent")?["recent"] as? [String] ?? []
+            recent = await get(cfg.route("recent"))?["recent"] as? [String] ?? []
         }
         // what Finder sent while the server was starting, restarting or offline opens now, whatever windows there are
         let q = queued; queued = []
@@ -112,12 +115,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
     /// after a restart each workspace has a new port: the server's list, else its folder opened again, then every window loads its new URL
     func reopenWorkspaces() async {
         windows.sites = [:]
-        for row in await get("/app/sites")?["sites"] as? [[String: Any]] ?? [] { windows.learn(row) }
+        for row in await sites()?["sites"] as? [[String: Any]] ?? [] { windows.learn(row) }
         var urls = [String: URL]()
         for (p, s) in windows.sites { urls[s] = URL(string: "http://127.0.0.1:\(p)/") }
         for k in windows.windows.keys where k != Windows.homeKey && urls[k] == nil {
             guard let root = windows.roots[k] else { continue }
-            let (code, d) = await request("/hub/open", method: "POST", query: ["path": root, "grant": grants.issue(root)])
+            let (code, d) = await request(cfg.route("open"), method: "POST", query: ["path": root, "grant": grants.issue(root)])
             windows.note(nil, "reopen \(k) \(root) -> \(code) \(d["url"] as? String ?? "")")
             if code == 200 { windows.learn(d); if let s = d["url"] as? String { urls[k] = URL(string: s) } }
         }
@@ -126,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
 
     func get(_ path: String) async -> [String: Any]? { let (c, d) = await request(path, timeout: 10); return c == 200 ? d : nil }
 
-    // open events: Finder, the Dock, `open -a Leela`
+    // open events: Finder, the Dock, `open -a <Name>`
     func application(_ a: NSApplication, open urls: [URL]) {
         windows.note(nil, "open \(urls.map(\.path)) ready=\(sup.map { if case .ready = $0.phase { true } else { false } } ?? false)")
         guard case .ready = sup?.phase else { queued += urls; return }
@@ -144,12 +147,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
 
     func openFolder(_ path: String, trusted: Bool) {
         Task {
-            let (code, d) = trusted ? await request("/hub/open", method: "POST", query: ["path": path, "grant": grants.issue(path)]) : await untrusted(["path": path])
+            let (code, d) = trusted ? await request(cfg.route("open"), method: "POST", query: ["path": path, "grant": grants.issue(path)]) : await untrusted(["path": path])
             guard code == 200, d["ok"] as? Bool == true, let s = d["url"] as? String, let u = URL(string: s) else {
-                return tell("Leela could not open \(path): \(d["error"] as? String ?? "no answer")")
+                return tell("\(Kavacha.config.name) could not open \(path): \(d["error"] as? String ?? "no answer")")
             }
             windows.learn(d)
-            windows.show(u, title: "leela — \(d["name"] as? String ?? "")")
+            windows.show(u, title: Kavacha.config.window.title_prefix + "\(d["name"] as? String ?? "")")
         }
     }
 
@@ -166,16 +169,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
     func openFile(_ path: String) {
         Task {
             let dir = (path as NSString).deletingLastPathComponent
-            var (code, d) = await request("/hub/open", method: "POST", query: ["path": dir, "file": path, "grant": grants.issue(dir)])
-            // refused in the loose window too (a key file, one too large): the server asks before it adds the folder, as leela_app.open_file
+            var (code, d) = await request(cfg.route("open"), method: "POST", query: ["path": dir, "file": path, "grant": grants.issue(dir)])
+            // refused in the loose window too (a key file, one too large): the server asks before it adds the folder
             if code != 200, let o = d["offer"] as? String, !o.isEmpty, d["declined"] as? Bool != true {
-                (code, d) = await request("/hub/open", method: "POST", query: ["path": o, "file": path, "folder": "1"])
+                (code, d) = await request(cfg.route("open"), method: "POST", query: ["path": o, "file": path, "folder": "1"])
                 if d["declined"] as? Bool == true { return }
             }
             windows.note(nil, "open file \(path) -> \(code) \(d["url"] as? String ?? "") \(d["error"] as? String ?? "")")
-            guard code == 200, let s = d["url"] as? String, let u = URL(string: s) else { return tell("Leela could not open \(path): \(d["error"] as? String ?? "no answer")") }
+            guard code == 200, let s = d["url"] as? String, let u = URL(string: s) else { return tell("\(Kavacha.config.name) could not open \(path): \(d["error"] as? String ?? "no answer")") }
             windows.learn(d)
-            windows.show(u, title: "leela — \((path as NSString).lastPathComponent)")
+            windows.show(u, title: Kavacha.config.window.title_prefix + "\((path as NSString).lastPathComponent)")
         }
     }
 
@@ -184,7 +187,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
         o.canChooseDirectories = true; o.canChooseFiles = false; o.allowsMultipleSelection = false
         windows.sheet(o, on: w) { [self] ok in
             guard ok, let u = o.url else { return done(nil) }
-            Task { _ = await request("/hub/grant", method: "POST", query: ["path": u.path, "grant": grants.issue(u.path)], timeout: 10); done(u.path) }
+            Task { _ = await request(cfg.route("grant"), method: "POST", query: ["path": u.path, "grant": grants.issue(u.path)], timeout: 10); done(u.path) }
         }
     }
 
@@ -196,7 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
             guard ok, let u = o.url else { return done(nil) }
             var dir: ObjCBool = false
             guard FileManager.default.fileExists(atPath: u.path, isDirectory: &dir), dir.boolValue else { return done(u.path) }
-            Task { _ = await request("/hub/grant", method: "POST", query: ["path": u.path, "grant": grants.issue(u.path)], timeout: 10); done(u.path) }
+            Task { _ = await request(cfg.route("grant"), method: "POST", query: ["path": u.path, "grant": grants.issue(u.path)], timeout: 10); done(u.path) }
         }
     }
 
@@ -208,9 +211,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
         Task {
             let (code, d) = await untrusted(["path": path])
             windows.note(nil, "open path \(path) -> \(code) \(d["url"] as? String ?? "") \(d["error"] as? String ?? "")")
-            guard code == 200, let s = d["url"] as? String, let u = URL(string: s) else { return tell("Leela could not open \(path): \(d["error"] as? String ?? "no answer")") }
+            guard code == 200, let s = d["url"] as? String, let u = URL(string: s) else { return tell("\(Kavacha.config.name) could not open \(path): \(d["error"] as? String ?? "no answer")") }
             windows.learn(d)
-            windows.show(u, title: "leela — \((path as NSString).lastPathComponent)")
+            windows.show(u, title: Kavacha.config.window.title_prefix + "\((path as NSString).lastPathComponent)")
         }
         return true
     }
@@ -223,7 +226,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
     @objc func openRecent(_ i: NSMenuItem) { if let p = i.representedObject as? String { openFolder(p, trusted: true) } }
 
     func applicationDockMenu(_ s: NSApplication) -> NSMenu? {
-        Task { recent = await get("/app/recent")?["recent"] as? [String] ?? recent }
+        Task { recent = await get(cfg.route("recent"))?["recent"] as? [String] ?? recent }
         return Menus.dock(recent, target: self, action: #selector(openRecent(_:)))
     }
 
@@ -249,7 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ControlHost {
     func confirm(_ question: String) async -> Bool? {
         NSApp.activate(ignoringOtherApps: true)
         let a = NSAlert()
-        a.messageText = "Leela"; a.informativeText = question
+        a.messageText = Kavacha.config.name; a.informativeText = question
         a.addButton(withTitle: "Add"); a.addButton(withTitle: "Cancel")
         if let w = windows.forQuestion() {
             return await withCheckedContinuation { c in a.beginSheetModal(for: w) { c.resume(returning: $0 == .alertFirstButtonReturn) } }

@@ -1,16 +1,19 @@
 import Foundation
 import Network
-@testable import LeelaCore
+@testable import KavachaCore
 
 let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-let fixtures = here.appending(path: "Fixtures")
-let repo = here.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-let childenvURL = repo.appending(path: "packaging/childenv.json")
+/// the kavacha repository, and the fixtures every side of the contract reads
+let repo = here.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+let testConfig = LauncherConfig.named("App", extras: ["mlx", "llama", "langserver"])
+let contract = repo.appending(path: "contract/fixtures")
+let fixtures = contract.appending(path: "sshsig")
+let childenvURL = contract.appending(path: "childenv.json")
 let fixtureKeys = try! SSHKey.load(fixtures.appending(path: "keys.pub"))
 let facts = AppFacts(uv: "0.13.6", api: 1, macOS: OperatingSystemVersion(majorVersion: 15, minorVersion: 0, patchVersion: 0))
 
 func tempDir() -> URL {
-    let u = FileManager.default.temporaryDirectory.appending(path: "leela-tests-\(UUID().uuidString)").resolvingSymlinksInPath()
+    let u = FileManager.default.temporaryDirectory.appending(path: "kavacha-tests-\(UUID().uuidString)").resolvingSymlinksInPath()
     try! FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
     return u
 }
@@ -25,7 +28,7 @@ func sh(_ exe: String, _ args: [String], env: [String: String] = ["PATH": "/usr/
 }
 
 /// signs `file` with the throwaway fixture key through the real ssh-keygen, with a temporary HOME and no agent
-func sign(_ file: URL, namespace: String = "leela-lock") -> URL {
+func sign(_ file: URL, namespace: String = "app-lock") -> URL {
     let d = tempDir(), key = d.appending(path: "k")
     try! FileManager.default.copyItem(at: fixtures.appending(path: "main.key"), to: key)
     try! FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: key.path)
@@ -41,11 +44,11 @@ func makeLock(_ dir: URL, n: Int, uv: String = "0.13.6", body: String = "lock", 
               macos: String = "14.0", tamper: ((inout Manifest) -> Void)? = nil) -> Manifest {
     let fm = FileManager.default
     try! fm.createDirectory(at: dir, withIntermediateDirectories: true)
-    try! Data("[project]\nname = \"leela-lock\"\n".utf8).write(to: dir.appending(path: "pyproject.toml"))
+    try! Data("[project]\nname = \"app-lock\"\n".utf8).write(to: dir.appending(path: "pyproject.toml"))
     try! Data("version = 1\n# \(body) \(n)\n".utf8).write(to: dir.appending(path: "uv.lock"))
     try! Data("3.13.18\n".utf8).write(to: dir.appending(path: ".python-version"))
     var m = Manifest(n: n, hash: try! LockHash.hash(dir: dir, uv: uv), files: Dictionary(uniqueKeysWithValues: LockHash.files.map { ($0, sha256(try! Data(contentsOf: dir.appending(path: $0)))) }),
-                     leela: "0.1.23", python: "3.13.18", uv_min: uv, launcher_api_min: api, platform: platform, macos_min: macos, download_bytes: 1000)
+                     python: "3.13.18", uv_min: uv, launcher_api_min: api, platform: platform, macos_min: macos, download_bytes: 1000)
     tamper?(&m)
     let e = JSONEncoder(); e.outputFormatting = [.sortedKeys]
     try! e.encode(m).write(to: dir.appending(path: "manifest.json"))
@@ -55,7 +58,7 @@ func makeLock(_ dir: URL, n: Int, uv: String = "0.13.6", body: String = "lock", 
     return m
 }
 
-/// a fake uv: `--version`, and `sync` that makes `$UV_PROJECT_ENVIRONMENT/bin/leela`; a FAIL file beside it makes sync fail half way
+/// a fake uv: `--version`, and `sync` that makes `$UV_PROJECT_ENVIRONMENT/bin/app`; a FAIL file beside it makes sync fail half way
 func fakeUV(_ dir: URL = tempDir()) -> URL {
     let u = dir.appending(path: "uv")
     let script = """
@@ -64,7 +67,7 @@ func fakeUV(_ dir: URL = tempDir()) -> URL {
     if [ "$1" = "--version" ]; then echo "uv 0.13.6"; exit 0; fi
     echo "$@" >> "$d/calls.txt"
     env | grep '^UV_' | sort > "$d/env.txt"
-    if [ -f "$UV_PROJECT_ENVIRONMENT/bin/leela" ]; then echo 'SEEDED' >> "$d/seeded.txt"; if [ -f "$d/SEEDFAIL" ]; then echo 'error: broken copy' >&2; exit 2; fi; fi
+    if [ -f "$UV_PROJECT_ENVIRONMENT/bin/app" ]; then echo 'SEEDED' >> "$d/seeded.txt"; if [ -f "$d/SEEDFAIL" ]; then echo 'error: broken copy' >&2; exit 2; fi; fi
     mkdir -p "$UV_PROJECT_ENVIRONMENT/bin" "$UV_PROJECT_ENVIRONMENT/lib/site-packages/pkg/__pycache__"
     printf 'home = /py\nversion_info = 3.13.18\n' > "$UV_PROJECT_ENVIRONMENT/pyvenv.cfg"
     printf '#!%s/bin/python\n' "$UV_PROJECT_ENVIRONMENT" > "$UV_PROJECT_ENVIRONMENT/bin/tool"
@@ -74,7 +77,7 @@ func fakeUV(_ dir: URL = tempDir()) -> URL {
     if [ -f "$d/COLD" ]; then echo "Downloading numpy (3.0MiB)"; mkdir -p "$UV_CACHE_DIR"; head -c 3000000 /dev/zero > "$UV_CACHE_DIR/numpy.whl"; sleep 1; echo " Downloaded numpy"; fi
     echo "Prepared 3 packages in 10ms"
     if [ -f "$d/FAIL" ]; then echo "error: Failed to fetch: no network" >&2; exit 2; fi
-    printf '#!/bin/sh\\nexit 0\\n' > "$UV_PROJECT_ENVIRONMENT/bin/leela"; chmod +x "$UV_PROJECT_ENVIRONMENT/bin/leela"
+    printf '#!/bin/sh\\nexit 0\\n' > "$UV_PROJECT_ENVIRONMENT/bin/app"; chmod +x "$UV_PROJECT_ENVIRONMENT/bin/app"
     echo "Installed 3 packages in 5ms"
     """
     try! Data(script.utf8).write(to: u)
@@ -84,7 +87,7 @@ func fakeUV(_ dir: URL = tempDir()) -> URL {
 
 func store(_ paths: Paths = tempPaths(), uv: URL = fakeUV()) -> EnvStore {
     EnvStore(paths: paths, spec: try! ChildEnv.load(childenvURL), uv: uv, uvVersion: "0.13.6",
-             parent: ["PATH": "/usr/bin:/bin", "UV_INDEX_URL": "https://evil.example", "VIRTUAL_ENV": "/elsewhere"], home: NSTemporaryDirectory())
+             parent: ["PATH": "/usr/bin:/bin", "UV_INDEX_URL": "https://evil.example", "VIRTUAL_ENV": "/elsewhere"], home: NSTemporaryDirectory(), config: testConfig)
 }
 
 /// A small HTTP server on 127.0.0.1 for the tests: each path gives a status and bytes.

@@ -1,31 +1,19 @@
 import AppKit
-import LeelaCore
+import KavachaApp
+import KavachaCore
 
-// `Leela --lock-test <lock folder> <work folder>`: build the env as the app does, with the bundled uv and childenv.json, and print it. No window.
+// kavacha's launcher, configured by Resources/kavacha.json. Headless: `--lock-test <lock> <work>` builds an env as the app does;
+// `--check-menu <menu.json>` checks a menu bar with no window.
 let args = CommandLine.arguments
+let why = Launcher.configure()
+if let i = args.firstIndex(of: "--check-menu"), i + 1 < args.count {
+    let bad = MainActor.assumeIsolated { Launcher.checkMenu(URL(fileURLWithPath: args[i + 1])) }
+    for b in bad { print(b) }
+    print(bad.isEmpty ? "menu ok" : "\(bad.count) problems")
+    exit(bad.isEmpty ? 0 : 1)
+}
+if let why { MainActor.assumeIsolated { Launcher.refuse(why) } }
 if let i = args.firstIndex(of: "--lock-test"), i + 2 < args.count {
-    let res = Bundle.main.resourceURL!, uv = Bundle.main.bundleURL.appending(path: "Contents/Helpers/uv")
-    let work = URL(fileURLWithPath: args[i + 2])
-    let sem = DispatchSemaphore(value: 0)
-    var code: Int32 = 1
-    Task.detached {
-        do {
-            let spec = try ChildEnv.load(res.appending(path: "childenv.json"))
-            let v = Run.output(uv, ["--version"])?.split(separator: " ").dropFirst().first.map(String.init) ?? ""
-            let store = EnvStore(paths: Paths(support: work.appending(path: "support"), caches: work.appending(path: "caches")), spec: spec, uv: uv, uvVersion: v)
-            let h = try await store.build(lock: URL(fileURLWithPath: args[i + 1]), n: 0, extras: [])
-            print(store.paths.env(h).path); code = 0
-        } catch { FileHandle.standardError.write(Data("lock test: \(error)\n".utf8)) }
-        sem.signal()
-    }
-    sem.wait()
-    exit(code)
+    exit(Launcher.lockTest(lock: URL(fileURLWithPath: args[i + 1]), work: URL(fileURLWithPath: args[i + 2])))
 }
-
-MainActor.assumeIsolated {
-    let app = NSApplication.shared
-    let delegate = AppDelegate()
-    app.delegate = delegate
-    app.setActivationPolicy(.regular)
-    app.run()
-}
+MainActor.assumeIsolated { Launcher.run() }

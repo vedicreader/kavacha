@@ -1,30 +1,30 @@
 import Foundation
 import Testing
-@testable import LeelaCore
+@testable import KavachaCore
 
 @Suite struct ChildEnvTests {
     let spec = try! ChildEnv.load(childenvURL)
 
     @Test func dropsThePythonAndUVSettingsOfTheParent() {
-        let parent = ["PATH": "/usr/bin", "VIRTUAL_ENV": "/v", "PYTHONPATH": "p", "UV_INDEX_URL": "x", "CONDA_PREFIX": "c", "LEELA_HOST_TOKEN": "t", "OPENAI_API_KEY": "k"]
+        let parent = ["PATH": "/usr/bin", "VIRTUAL_ENV": "/v", "PYTHONPATH": "p", "UV_INDEX_URL": "x", "CONDA_PREFIX": "c", "APP_HOST_TOKEN": "t", "OPENAI_API_KEY": "k"]
         let e = spec.uvEnv(parent, home: "/h", vals: ["cache": "/c", "python": "/py", "python_version": "3.13.18", "env": "/e"])
-        for k in ["VIRTUAL_ENV", "PYTHONPATH", "UV_INDEX_URL", "CONDA_PREFIX", "LEELA_HOST_TOKEN"] { #expect(e[k] == nil, "\(k)") }
+        for k in ["VIRTUAL_ENV", "PYTHONPATH", "UV_INDEX_URL", "CONDA_PREFIX", "APP_HOST_TOKEN"] { #expect(e[k] == nil, "\(k)") }
         #expect(e["OPENAI_API_KEY"] == "k" && e["HOME"] == "/h" && e["LANG"] == "en_US.UTF-8")
         #expect(e["UV_PROJECT_ENVIRONMENT"] == "/e" && e["UV_PYTHON"] == "3.13.18" && e["UV_NO_CONFIG"] == "1" && e["UV_FROZEN"] == "1")
-        #expect(e["UV_PYTHON_PREFERENCE"] == "only-managed" && e["UV_LINK_MODE"] == "clone" && e["UV_CACHE_DIR"] == "/c")
+        #expect(e["UV_PYTHON_PREFERENCE"] == "only-managed" && e["UV_LINK_MODE"] == "hardlink" && e["UV_CACHE_DIR"] == "/c")
     }
 
     @Test func theServerGetsThePersonsEnvAndNoBuildSettings() {
-        let e = spec.serverEnv(["PATH": "/usr/bin:/x", "UV_INDEX_URL": "x", "VIRTUAL_ENV": "/v", "OPENAI_API_KEY": "k"], home: "/h", extra: ["LEELA_APP_VERSION": "1.0.0"])
-        #expect(e["PATH"]!.hasPrefix("/h/.local/bin:/opt/homebrew/bin") && e["PATH"]!.hasSuffix(":/x"))
+        let e = spec.serverEnv(["PATH": "/usr/bin:/x", "UV_INDEX_URL": "x", "VIRTUAL_ENV": "/v", "OPENAI_API_KEY": "k"], home: "/h", extra: ["APP_APP_VERSION": "1.0.0"])
+        #expect(e["PATH"]!.hasPrefix("/h/.local/bin:/usr/local/bin") && e["PATH"]!.hasSuffix(":/x"))
         #expect(!e.keys.contains { $0.hasPrefix("UV_") } && e["VIRTUAL_ENV"] == nil && e["PYTHONNOUSERSITE"] == nil && e["NO_COLOR"] == nil)
-        #expect(e["PYTHONUNBUFFERED"] == "1" && e["LEELA_APP_VERSION"] == "1.0.0" && e["OPENAI_API_KEY"] == "k" && e["HOME"] == "/h")
+        #expect(e["PYTHONUNBUFFERED"] == "1" && e["APP_APP_VERSION"] == "1.0.0" && e["OPENAI_API_KEY"] == "k" && e["HOME"] == "/h")
     }
 
-    @Test func theCommandsComeFromTheSameFileAsToolsLockPy() {
+    @Test func theCommandsComeFromTheSameFileAsKavachaLock() {
         #expect(spec.syncArgs(lock: URL(fileURLWithPath: "/l"), extras: ["mlx", "llama"]) == ["sync", "--frozen", "--no-install-project", "--project", "/l", "--extra", "mlx", "--extra", "llama"])
         #expect(spec.syncArgs(lock: URL(fileURLWithPath: "/l"), extras: ["mlx"], inexact: true).suffix(3) == ["--inexact", "--extra", "mlx"])
-        #expect(spec.serverArgs(port: 5123) == ["--app", "--shell", "none", "--port", "5123", "--gateway-port", "0"])
+        #expect(spec.serverArgs(port: 5123) == ["--app", "--port", "5123"])
         #expect(spec.api == LauncherAPI.version)
     }
 }

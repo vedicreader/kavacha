@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import LeelaCore
+@testable import KavachaCore
 
 @Suite struct EnvStoreTests {
     @Test func aBuildWritesTheMarkerLastWithTheCleanEnv() async throws {
@@ -138,7 +138,7 @@ import Testing
 
     @Test func theChangesBetweenTwoLocksAreSaidInAFewWords() throws {
         let a = tempDir(), b = tempDir()
-        try Data("version = 1\n\n[[package]]\nname = \"leela-lock\"\nversion = \"0\"\n\n[[package]]\nname = \"ramabana\"\nversion = \"0.2.109\"\n\n[[package]]\nname = \"x\"\nversion = \"1\"\n".utf8).write(to: a.appending(path: "uv.lock"))
+        try Data("version = 1\n\n[[package]]\nname = \"app-lock\"\nversion = \"0\"\n\n[[package]]\nname = \"ramabana\"\nversion = \"0.2.109\"\n\n[[package]]\nname = \"x\"\nversion = \"1\"\n".utf8).write(to: a.appending(path: "uv.lock"))
         try Data("version = 1\n\n[[package]]\nname = \"ramabana\"\nversion = \"0.2.110\"\n\n[[package]]\nname = \"x\"\nversion = \"1\"\n".utf8).write(to: b.appending(path: "uv.lock"))
         #expect(LockDiff.summary(LockDiff.changes(from: a, to: b)) == "Updating 1 package: ramabana 0.2.109 → 0.2.110")
         #expect(LockDiff.summary((1...5).map { "p\($0)" }) == "Updating 5 packages: p1, p2, p3 and 2 more" && LockDiff.summary([]) == "")

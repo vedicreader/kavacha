@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-/// One call the page makes on `window.pywebview.api`.
+/// One call the page makes on `window.<js_global>.api`.
 public enum BridgeAction: Equatable, Sendable {
     case openFolder(String)
     case pickFolder
@@ -15,10 +15,10 @@ public enum BridgeAction: Equatable, Sendable {
     case unknown(String)
 }
 
-/// The page's native bridge: the same `window.pywebview.api` the pywebview app gave it, so the page JavaScript does not change.
+/// The page's native bridge: the same `window.pywebview.api` a pywebview app gives it, so the page JavaScript does not change. Its names come from kavacha.json.
 public enum Bridge {
-    public static let handler = "leela"
-    public static let methods = ["open_folder", "pick_folder", "pick_path", "open_path", "recent", "set_background", "set_title"]
+    public static var handler: String { Kavacha.config.bridge.handler }
+    public static var methods: [String] { Kavacha.config.bridge.methods }
 
     /// the message `{method, args}` the shim posts, as an action
     public static func route(_ body: Any) -> BridgeAction {
@@ -40,17 +40,20 @@ public enum Bridge {
     public static func isColour(_ s: String) -> Bool { s.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression) != nil }
 
     /// injected at document start in every page of the server
-    public static let shim = """
-    (() => {
-      if (window.pywebview && window.pywebview.api && window.pywebview.api.__leela) return;
-      const call = (method, args) => window.webkit.messageHandlers.\(handler).postMessage({method, args});
-      const api = {__leela: true};
-      for (const m of \(methods.description)) api[m] = (...args) => call(m, args);
-      window.pywebview = {api};
-      const ready = () => window.dispatchEvent(new Event('pywebviewready'));
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
-    })();
-    """
+    public static func shim(_ c: LauncherConfig = Kavacha.config) -> String {
+        let b = c.bridge, g = b.js_global
+        return """
+        (() => {
+          if (window.\(g) && window.\(g).api && window.\(g).api.\(b.flag)) return;
+          const call = (method, args) => window.webkit.messageHandlers.\(b.handler).postMessage({method, args});
+          const api = {\(b.flag): true};
+          for (const m of \(b.methods.description)) api[m] = (...args) => call(m, args);
+          window.\(g) = {api};
+          const ready = () => window.dispatchEvent(new Event('\(g)ready'));
+          if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
+        })();
+        """
+    }
 }
 
 /// What the launcher does for a control route; the app delegate implements it.
@@ -76,7 +79,7 @@ public struct ControlRequest: Sendable {
     }
 }
 
-/// The routes of the launcher's control server, without the socket. See docs/thin-app.md.
+/// The routes of the launcher's control server, without the socket. See contract/api-1.md.
 public enum ControlRouter {
     public static func tokenOK(_ headers: [String: String], token: String) -> Bool {
         guard !token.isEmpty, let a = headers["authorization"], a.hasPrefix("Bearer ") else { return false }
@@ -85,7 +88,7 @@ public enum ControlRouter {
         return zip(given, want).reduce(0) { $0 | ($1.0 ^ $1.1) } == 0
     }
 
-    @MainActor public static func handle(_ r: ControlRequest, token: String, host: ControlHost) async -> (Int, [String: Any]) {
+    @MainActor public static func handle(_ r: ControlRequest, token: String, host: ControlHost, extras: [String] = Kavacha.config.extras) async -> (Int, [String: Any]) {
         guard tokenOK(r.headers, token: token) else { return (401, ["ok": false, "error": "bad token"]) }
         let body = (try? JSONSerialization.jsonObject(with: r.body)) as? [String: Any] ?? [:]
         switch (r.method, r.path) {
@@ -94,7 +97,7 @@ public enum ControlRouter {
             guard let yes = await host.confirm(q) else { return (200, ["ok": false, "no_window": true]) }
             return (200, ["answer": yes])
         case ("POST", "/extras"):
-            guard let n = body["name"] as? String, EnvStore.extraNames.contains(n) else { return (400, ["ok": false, "error": "unknown extra"]) }
+            guard let n = body["name"] as? String, extras.contains(n) else { return (400, ["ok": false, "error": "unknown extra"]) }
             return (200, ["ok": await host.installExtra(n)])
         case ("POST", "/update"):
             guard let k = body["kind"] as? String, ["app", "lock"].contains(k) else { return (400, ["ok": false, "error": "kind is app or lock"]) }
@@ -118,7 +121,7 @@ public final class ControlServer: @unchecked Sendable {
     public let token: String
     public private(set) var port = 0
     private var listener: NWListener?
-    private let q = DispatchQueue(label: "leela-control")
+    private let q = DispatchQueue(label: "kavacha-control")
     private let handle: @Sendable (ControlRequest) async -> (Int, [String: Any])
 
     public init(token: String = ControlServer.newToken(), handle: @escaping @Sendable (ControlRequest) async -> (Int, [String: Any])) {

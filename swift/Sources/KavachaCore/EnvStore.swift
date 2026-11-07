@@ -38,7 +38,7 @@ public struct EnvState: Codable, Equatable, Sendable {
     }
 }
 
-/// .leela-env.json, written last: an env folder without it is a partial build.
+/// The env marker (`<marker>` in kavacha.json), written last: an env folder without it is a partial build.
 public struct EnvMarker: Codable, Equatable, Sendable {
     public var hash: String
     public var n: Int
@@ -61,12 +61,14 @@ public final class EnvStore: @unchecked Sendable {
     public let uvVersion: String
     public let parent: [String: String]
     public let home: String
-    public static let extraNames = ["mlx", "llama", "langserver"]
+    /// the extras a person may add, and the Python minor when a lock names none
+    public let extraNames: [String], python: String
     private let q = NSLock()
 
     public init(paths: Paths, spec: ChildEnv, uv: URL, uvVersion: String,
-                parent: [String: String] = ProcessInfo.processInfo.environment, home: String = NSHomeDirectory()) {
+                parent: [String: String] = ProcessInfo.processInfo.environment, home: String = NSHomeDirectory(), config: LauncherConfig = Kavacha.config) {
         self.paths = paths; self.spec = spec; self.uv = uv; self.uvVersion = uvVersion; self.parent = parent; self.home = home
+        self.extraNames = config.extras; self.python = config.python
     }
 
     // state.json
@@ -107,13 +109,13 @@ public final class EnvStore: @unchecked Sendable {
         ["cache": paths.uvCache.path, "python": paths.python.path, "python_version": python, "env": env.path]
     }
 
-    static func python(_ lock: URL) -> String {
-        ((try? String(contentsOf: lock.appending(path: ".python-version"), encoding: .utf8)) ?? "3.13").trimmingCharacters(in: .whitespacesAndNewlines)
+    func python(_ lock: URL) -> String {
+        ((try? String(contentsOf: lock.appending(path: ".python-version"), encoding: .utf8)) ?? python).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public func syncLaunch(lock: URL, hash: String, extras: [String], inexact: Bool = false) -> Launch {
         Launch(executable: uv, args: spec.syncArgs(lock: lock, extras: extras, inexact: inexact),
-               env: spec.uvEnv(parent, home: home, vals: vals(env: paths.env(hash), python: Self.python(lock))), cwd: paths.support)
+               env: spec.uvEnv(parent, home: home, vals: vals(env: paths.env(hash), python: python(lock))), cwd: paths.support)
     }
 
     /// builds the env of lock `n` in `envs/<hash16>`, the marker last; a failed build leaves no folder. The hash.
@@ -129,7 +131,7 @@ public final class EnvStore: @unchecked Sendable {
         let l = syncLaunch(lock: lock, hash: h, extras: xs)
         // from a copy of the env in use, so uv changes only what differs; `uv sync` is exact, so it also removes what the new lock drops
         let from = load().current.flatMap { $0 != h && isBuilt($0) ? paths.env($0) : nil }
-        let seeded = from.map { seed(env, from: $0, python: Self.python(lock)) } ?? false
+        let seeded = from.map { seed(env, from: $0, python: python(lock)) } ?? false
         if from != nil && !seeded { try? fm.removeItem(at: env) }
         var code = try await Run.toEnd(background ? l.background : l, log: paths.syncLog(h), line: line, started: started)
         if code != 0 && seeded {
@@ -152,7 +154,7 @@ public final class EnvStore: @unchecked Sendable {
         let fm = FileManager.default
         guard let cfg = try? String(contentsOf: a.appending(path: "pyvenv.cfg"), encoding: .utf8), cfg.contains("version_info = \(python)") else { return false }
         guard clonefile(a.path, b.path, 0) == 0 else { return false }
-        try? fm.removeItem(at: b.appending(path: ".leela-env.json"))
+        try? fm.removeItem(at: b.appending(path: paths.markerName))
         var caches = [URL]()
         if let e = fm.enumerator(at: b, includingPropertiesForKeys: [.isDirectoryKey]) {
             for case let u as URL in e where u.lastPathComponent == "__pycache__" { caches.append(u); e.skipDescendants() }
@@ -176,7 +178,7 @@ public final class EnvStore: @unchecked Sendable {
 
     /// adds one pinned extra of the current lock to the running env (`uv sync --inexact --extra`), and records it
     public func installExtra(_ name: String, line: (@Sendable (String) -> Void)? = nil) async throws {
-        guard Self.extraNames.contains(name) else { throw BuildError.unknownExtra(name) }
+        guard extraNames.contains(name) else { throw BuildError.unknownExtra(name) }
         let s = load()
         guard let h = s.current, var m = marker(h) else { throw BuildError.noCurrent }
         let xs = Array(Set(m.extras + [name])).sorted()
@@ -249,7 +251,7 @@ public final class EnvStore: @unchecked Sendable {
     public func pruneDue(now: Date = Date()) -> Bool { now.timeIntervalSince1970 - load().pruned > 7 * 86400 }
 
     public func pruneLaunch() -> Launch {
-        Launch(executable: uv, args: ["cache", "prune"], env: spec.uvEnv(parent, home: home, vals: vals(env: paths.envs, python: "3.13")), cwd: paths.support)
+        Launch(executable: uv, args: ["cache", "prune"], env: spec.uvEnv(parent, home: home, vals: vals(env: paths.envs, python: python)), cwd: paths.support)
     }
 
     /// copies a checked lock folder into locks/<n>, where uv reads it; the bundle stays untouched

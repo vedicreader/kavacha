@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import LeelaCore
+@testable import KavachaCore
 
 @Suite struct BridgeTests {
     @Test func eachPageCallMapsToOneAction() {
@@ -8,7 +8,7 @@ import Testing
         #expect(Bridge.route(["method": "pick_folder", "args": []]) == .pickFolder)
         // Open…: the page calls pick_path, then open_path with what was chosen
         #expect(Bridge.route(["method": "pick_path", "args": []]) == .pickPath && Bridge.route(["method": "open_path", "args": ["/a/b.png"]]) == .openPath("/a/b.png"))
-        #expect(Bridge.route(["method": "open_path", "args": [""]]) == .unknown("open_path") && Bridge.shim.contains("\"pick_path\"") && Bridge.shim.contains("\"open_path\""))
+        #expect(Bridge.route(["method": "open_path", "args": [""]]) == .unknown("open_path") && Bridge.shim().contains("\"pick_path\"") && Bridge.shim().contains("\"open_path\""))
         #expect(Bridge.route(["method": "recent"]) == .recent)
         #expect(Bridge.route(["method": "set_background", "args": ["#112233"]]) == .setBackground("#112233"))
         #expect(Bridge.route(["method": "set_title", "args": ["leela — x", "http://x.localhost:5010/"]]) == .setTitle("leela — x", url: "http://x.localhost:5010/"))
@@ -22,8 +22,8 @@ import Testing
     }
 
     @Test func theShimGivesThePageTheSameApiAndTheReadyEvent() {
-        for m in Bridge.methods { #expect(Bridge.shim.contains("\"\(m)\"")) }
-        #expect(Bridge.shim.contains("window.pywebview = {api}") && Bridge.shim.contains("pywebviewready") && Bridge.shim.contains("messageHandlers.leela"))
+        for m in Bridge.methods { #expect(Bridge.shim().contains("\"\(m)\"")) }
+        #expect(Bridge.shim().contains("window.pywebview = {api}") && Bridge.shim().contains("pywebviewready") && Bridge.shim().contains("messageHandlers.app"))
     }
 }
 
@@ -48,38 +48,38 @@ func req(_ method: String, _ path: String, _ body: [String: Any]? = nil, token: 
     @Test func everyRouteNeedsTheToken() async {
         let h = FakeHost()
         for r in [req("GET", "/status", token: nil), req("GET", "/status", token: "wrong"), req("GET", "/status", token: ""), req("POST", "/confirm", ["question": "q"], token: "to")] {
-            #expect(await ControlRouter.handle(r, token: "tok", host: h).0 == 401)
+            #expect(await ControlRouter.handle(r, token: "tok", host: h, extras: testConfig.extras).0 == 401)
         }
-        #expect(await ControlRouter.handle(req("GET", "/status", token: ""), token: "", host: h).0 == 401, "an empty token matches nothing")
+        #expect(await ControlRouter.handle(req("GET", "/status", token: ""), token: "", host: h, extras: testConfig.extras).0 == 401, "an empty token matches nothing")
         #expect(h.asked.isEmpty)
     }
 
     @Test func theRoutesReachTheHost() async {
         let h = FakeHost()
-        var (c, d) = await ControlRouter.handle(req("POST", "/confirm", ["question": "Add x?"]), token: "tok", host: h)
+        var (c, d) = await ControlRouter.handle(req("POST", "/confirm", ["question": "Add x?"]), token: "tok", host: h, extras: testConfig.extras)
         #expect(c == 200 && d["answer"] as? Bool == true && h.asked == ["Add x?"])
         h.answer = nil
-        (c, d) = await ControlRouter.handle(req("POST", "/confirm", ["question": "Add y?"]), token: "tok", host: h)
+        (c, d) = await ControlRouter.handle(req("POST", "/confirm", ["question": "Add y?"]), token: "tok", host: h, extras: testConfig.extras)
         #expect(c == 200 && d["answer"] == nil && d["no_window"] as? Bool == true, "no window is not a No")
-        #expect(await ControlRouter.handle(req("POST", "/extras", ["name": "mlx"]), token: "tok", host: h).0 == 200 && h.extras == ["mlx"])
-        #expect(await ControlRouter.handle(req("POST", "/extras", ["name": "torch"]), token: "tok", host: h).0 == 400)
-        (c, d) = await ControlRouter.handle(req("POST", "/update", ["kind": "lock"]), token: "tok", host: h)
+        #expect(await ControlRouter.handle(req("POST", "/extras", ["name": "mlx"]), token: "tok", host: h, extras: testConfig.extras).0 == 200 && h.extras == ["mlx"])
+        #expect(await ControlRouter.handle(req("POST", "/extras", ["name": "torch"]), token: "tok", host: h, extras: testConfig.extras).0 == 400)
+        (c, d) = await ControlRouter.handle(req("POST", "/update", ["kind": "lock"]), token: "tok", host: h, extras: testConfig.extras)
         #expect(d["state"] as? String == "running" && h.kinds == ["lock"])
-        #expect(await ControlRouter.handle(req("POST", "/update", ["kind": "rm"]), token: "tok", host: h).0 == 400)
-        #expect(await ControlRouter.handle(req("GET", "/update"), token: "tok", host: h).1["state"] as? String == "ready")
-        #expect(await ControlRouter.handle(req("POST", "/restart", [:]), token: "tok", host: h).1["ok"] as? Bool == true && h.restarts == 1)
-        #expect(await ControlRouter.handle(req("GET", "/status"), token: "tok", host: h).1["brew"] as? Bool == true)
-        #expect(await ControlRouter.handle(req("GET", "/nope"), token: "tok", host: h).0 == 404)
+        #expect(await ControlRouter.handle(req("POST", "/update", ["kind": "rm"]), token: "tok", host: h, extras: testConfig.extras).0 == 400)
+        #expect(await ControlRouter.handle(req("GET", "/update"), token: "tok", host: h, extras: testConfig.extras).1["state"] as? String == "ready")
+        #expect(await ControlRouter.handle(req("POST", "/restart", [:]), token: "tok", host: h, extras: testConfig.extras).1["ok"] as? Bool == true && h.restarts == 1)
+        #expect(await ControlRouter.handle(req("GET", "/status"), token: "tok", host: h, extras: testConfig.extras).1["brew"] as? Bool == true)
+        #expect(await ControlRouter.handle(req("GET", "/nope"), token: "tok", host: h, extras: testConfig.extras).0 == 404)
         let n = h.grants.issue("/a")
-        #expect(await ControlRouter.handle(req("POST", "/grant", ["nonce": n, "path": "/b"]), token: "tok", host: h).1["ok"] as? Bool == false, "another path")
+        #expect(await ControlRouter.handle(req("POST", "/grant", ["nonce": n, "path": "/b"]), token: "tok", host: h, extras: testConfig.extras).1["ok"] as? Bool == false, "another path")
         let m = h.grants.issue("/a")
-        #expect(await ControlRouter.handle(req("POST", "/grant", ["nonce": m, "path": "/a"]), token: "tok", host: h).1["ok"] as? Bool == true)
-        #expect(await ControlRouter.handle(req("POST", "/grant", ["nonce": m, "path": "/a"]), token: "tok", host: h).1["ok"] as? Bool == false, "once")
+        #expect(await ControlRouter.handle(req("POST", "/grant", ["nonce": m, "path": "/a"]), token: "tok", host: h, extras: testConfig.extras).1["ok"] as? Bool == true)
+        #expect(await ControlRouter.handle(req("POST", "/grant", ["nonce": m, "path": "/a"]), token: "tok", host: h, extras: testConfig.extras).1["ok"] as? Bool == false, "once")
     }
 
     @Test func theServerAnswersOverHTTPOnLoopbackWithTheToken() async throws {
         let h = FakeHost()
-        let srv = ControlServer(token: "tok") { r in await ControlRouter.handle(r, token: "tok", host: h) }
+        let srv = ControlServer(token: "tok") { r in await ControlRouter.handle(r, token: "tok", host: h, extras: testConfig.extras) }
         try srv.start(); defer { srv.stop() }
         #expect(srv.url.hasPrefix("http://127.0.0.1:") && srv.port > 0)
         func call(_ token: String?) async throws -> (Int, [String: Any]) {
@@ -110,21 +110,21 @@ func req(_ method: String, _ path: String, _ body: [String: Any]? = nil, token: 
 }
 
 @Suite struct BrewTests {
-    @Test func onlyTheCasksLeelaAppUpgradesThroughBrew() throws {
+    @Test func onlyTheCasksAppUpgradesThroughBrew() throws {
         let d = tempDir(), brew = d.appending(path: "bin/brew")
         try FileManager.default.createDirectory(at: brew.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("#!/bin/sh\necho 'upgraded'\n".utf8).write(to: brew)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: brew.path)
-        #expect(BrewUpgrade.find(app: URL(fileURLWithPath: "/Applications/Leela.app"), places: [brew.path]) == nil, "no Caskroom/leela")
-        try FileManager.default.createDirectory(at: d.appending(path: "Caskroom/leela"), withIntermediateDirectories: true)
-        #expect(BrewUpgrade.find(app: URL(fileURLWithPath: "/Applications/Leela.app"), places: [brew.path]) == brew)
+        #expect(BrewUpgrade.find(app: URL(fileURLWithPath: "/Applications/App.app"), places: [brew.path]) == nil, "no Caskroom/app")
+        try FileManager.default.createDirectory(at: d.appending(path: "Caskroom/app"), withIntermediateDirectories: true)
+        #expect(BrewUpgrade.find(app: URL(fileURLWithPath: "/Applications/App.app"), places: [brew.path]) == brew)
         #expect(BrewUpgrade.find(app: URL(fileURLWithPath: "/tmp/Other.app"), places: [brew.path]) == nil)
         #expect(BrewUpgrade(app: URL(fileURLWithPath: "/tmp/Other.app"), places: [brew.path]).start(log: d.appending(path: "log")).state == "unavailable")
     }
 
     /// a fake brew in its own folder: single-quoted strings, no command substitution, and an env with only that folder on PATH, so no test reaches the real brew
     func fake(_ body: String, _ make: ((URL) -> String)? = nil) throws -> (URL, URL, [String: String]) {
-        let d = tempDir(), brew = d.appending(path: "brew"), app = d.appending(path: "Leela.app"), body = make?(app) ?? body
+        let d = tempDir(), brew = d.appending(path: "brew"), app = d.appending(path: "App.app"), body = make?(app) ?? body
         try FileManager.default.createDirectory(at: app.appending(path: "Contents"), withIntermediateDirectories: true)
         try plist(app, "1.0.0")
         try Data("#!/bin/sh\nprintf '%s\\n' \"$*\" >> '\(d.path)/calls'\n/usr/bin/env > '\(d.path)/env'\n\(body)\n".utf8).write(to: brew)
@@ -140,13 +140,13 @@ func req(_ method: String, _ path: String, _ body: [String: Any]? = nil, token: 
     }
 
     @Test func anUpgradeThatChangesNothingTriesBrewUpdateThenSaysNotListedYet() async throws {
-        let (brew, app, base) = try fake("echo 'Warning: leela is up to date'")
+        let (brew, app, base) = try fake("echo 'Warning: app is up to date'")
         let b = BrewUpgrade(app: app, brew: brew, running: "1.0.0", base: base)
         #expect(b.start(log: brew.deletingLastPathComponent().appending(path: "log"), latest: "1.0.1").state == "running")
         try await finish(b)
-        #expect(b.state == UpdateState(state: "same", line: "Homebrew does not list Leela 1.0.1 yet. Try again in a few minutes."))
+        #expect(b.state == UpdateState(state: "same", line: "Homebrew does not list App 1.0.1 yet. Try again in a few minutes."))
         let calls = try String(contentsOf: brew.deletingLastPathComponent().appending(path: "calls"), encoding: .utf8)
-        #expect(calls == "upgrade --cask leela\nupdate\nupgrade --cask leela\n")
+        #expect(calls == "upgrade --cask app\nupdate\nupgrade --cask app\n")
         let env = try String(contentsOf: brew.deletingLastPathComponent().appending(path: "env"), encoding: .utf8)
         #expect(env.contains("HOMEBREW_AUTO_UPDATE_SECS=0") && !env.contains("HOMEBREW_NO_AUTO_UPDATE") && !env.contains("HOMEBREW_AUTO_UPDATE_CHECKED"))
         #expect(env.contains("PATH=\(brew.deletingLastPathComponent().path)\n"), "only the fake on PATH")
@@ -154,19 +154,19 @@ func req(_ method: String, _ path: String, _ body: [String: Any]? = nil, token: 
 
     @Test func anUpgradeThatPutsANewVersionInPlaceIsDone() async throws {
         let (brew, app, base) = try fake("") { app in
-            "echo '==> Upgrading leela'\nprintf '%s' '<?xml version=\"1.0\"?><plist version=\"1.0\"><dict><key>CFBundleShortVersionString</key><string>1.0.1</string></dict></plist>' > '\(app.path)/Contents/Info.plist'"
+            "echo '==> Upgrading app'\nprintf '%s' '<?xml version=\"1.0\"?><plist version=\"1.0\"><dict><key>CFBundleShortVersionString</key><string>1.0.1</string></dict></plist>' > '\(app.path)/Contents/Info.plist'"
         }
         let b = BrewUpgrade(app: app, brew: brew, running: "1.0.0", base: base)
         b.start(log: brew.deletingLastPathComponent().appending(path: "log"), latest: "1.0.1")
         try await finish(b)
-        #expect(b.state == UpdateState(state: "done", line: "Leela 1.0.1 is installed."))
+        #expect(b.state == UpdateState(state: "done", line: "App 1.0.1 is installed."))
     }
 
     @Test func aNewerAppAlreadyOnDiskIsInstalledAndWaitsForARestart() throws {
         let (brew, app, base) = try fake("exit 1")
         try plist(app, "1.0.1")
         let b = BrewUpgrade(app: app, brew: brew, running: "1.0.0", base: base)
-        #expect(b.start(log: brew.deletingLastPathComponent().appending(path: "log"), latest: "1.0.1") == UpdateState(state: "done", line: "Leela 1.0.1 is installed."))
+        #expect(b.start(log: brew.deletingLastPathComponent().appending(path: "log"), latest: "1.0.1") == UpdateState(state: "done", line: "App 1.0.1 is installed."))
         #expect(!FileManager.default.fileExists(atPath: brew.deletingLastPathComponent().appending(path: "calls").path), "brew did not run")
         #expect(BrewUpgrade.newer("1.0.10", "1.0.9") && !BrewUpgrade.newer("1.0.0", "1.0.0") && !BrewUpgrade.newer(nil, "1"))
     }

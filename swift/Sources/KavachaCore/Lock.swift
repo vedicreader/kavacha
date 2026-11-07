@@ -4,7 +4,7 @@ import Foundation
 public func hex(_ d: some Sequence<UInt8>) -> String { d.map { String(format: "%02x", $0) }.joined() }
 public func sha256(_ d: Data) -> String { hex(SHA256.hash(data: d)) }
 
-/// The lock hash: sha256 over the name and bytes of each lock file, then "uv" and the uv version. tools/lock.py computes the same.
+/// The lock hash: sha256 over the name and bytes of each lock file, then "uv" and the uv version. kavacha.lock computes the same.
 public enum LockHash {
     public static let files = ["pyproject.toml", "uv.lock", ".python-version"]
 
@@ -63,7 +63,7 @@ func sshString(_ d: Data) -> Data {
 /// SSHSIG (`ssh-keygen -Y sign`) checked with CryptoKit: the key must be one of `keys`, the namespace `namespace`, the hash sha512
 /// or sha256, and the Ed25519 signature must hold over the signed-data blob.
 public enum SSHSig {
-    public static let namespace = "leela-lock"
+    public static var namespace: String { Kavacha.config.sig_ns }
 
     public static func blob(armored: String) throws -> Data {
         let lines = armored.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
@@ -99,7 +99,7 @@ public enum SSHSig {
 /// What a new lock changes against the one in use, from the two `uv.lock` files: what the setup window and the update notice say.
 public enum LockDiff {
     /// `name -> version` of each `[[package]]` in a uv.lock
-    public static func versions(_ lock: URL) -> [String: String] {
+    public static func versions(_ lock: URL, project: String = Kavacha.config.lock_project) -> [String: String] {
         guard let t = try? String(contentsOf: lock.appending(path: "uv.lock"), encoding: .utf8) else { return [:] }
         var out = [String: String](), name: String?
         for l in t.split(separator: "\n", omittingEmptySubsequences: false) {
@@ -107,7 +107,7 @@ public enum LockDiff {
             if l.hasPrefix("name = "), name == nil { name = String(l.dropFirst(7)).trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }
             else if l.hasPrefix("version = "), let n = name, out[n] == nil { out[n] = String(l.dropFirst(10)).trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }
         }
-        return out.filter { $0.key != "leela-lock" }
+        return out.filter { $0.key != project }
     }
 
     /// each changed package as `name old → new`, `name new` (added) or `name old, removed`, sorted by name

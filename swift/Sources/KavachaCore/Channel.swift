@@ -1,8 +1,8 @@
 import Foundation
 
-/// The lock channel on GitHub releases: `lock-channel/<name>.json` points at `lock-<n>/`. See docs/thin-app.md.
+/// The lock channel on GitHub releases: `lock-channel/<name>.json` points at `lock-<n>/`. See contract/api-1.md.
 public struct Channel: Sendable {
-    public static let github = URL(string: "https://github.com/vedicreader/leela/releases/download")!
+    public static var github: URL { URL(string: Kavacha.config.channel) ?? URL(string: "https://invalid.invalid")! }
     public var base: URL
     /// `channel` or `channel-test`
     public var name: String
@@ -14,8 +14,8 @@ public struct Channel: Sendable {
         self.base = base; self.name = test ? "channel-test" : "channel"; self.keys = keys; self.app = app; self.session = session
     }
 
-    /// `LEELA_LOCK_CHANNEL=test` points an app at the test channel
-    public static func isTest(_ env: [String: String]) -> Bool { env["LEELA_LOCK_CHANNEL"] == "test" }
+    /// `<PREFIX>LOCK_CHANNEL=test` points an app at the test channel
+    public static func isTest(_ env: [String: String], prefix: String = Kavacha.config.env_prefix) -> Bool { env[prefix + "LOCK_CHANNEL"] == "test" }
 
     public static let defaultSession: URLSession = {
         let c = URLSessionConfiguration.ephemeral

@@ -14,7 +14,7 @@ public struct Launch: Sendable {
         self.executable = executable; self.args = args; self.env = env; self.cwd = cwd; self.stdinLine = stdinLine
     }
 
-    /// the same command at background priority (`taskpolicy -b`), for an update that builds while Leela runs
+    /// the same command at background priority (`taskpolicy -b`), for an update that builds while the app runs
     public var background: Launch {
         Launch(executable: URL(fileURLWithPath: "/usr/sbin/taskpolicy"), args: ["-b", executable.path] + args, env: env, cwd: cwd)
     }

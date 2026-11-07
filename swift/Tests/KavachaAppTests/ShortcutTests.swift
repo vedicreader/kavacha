@@ -2,66 +2,22 @@ import AppKit
 import Foundation
 import Testing
 import WebKit
-@testable import Leela
+@testable import KavachaApp
 
-/// The server's menu bar as `make test` wrote it from the Python source, with the default keymap: `LEELA_MENU_JSON`.
+/// The server's menu bar as `make test` wrote it from the Python source, with the default keymap: `KAVACHA_MENU_JSON`.
 func menuJSON() throws -> [[String: Any]] {
-    let p = try #require(ProcessInfo.processInfo.environment["LEELA_MENU_JSON"], "run through make test, which writes the server's menu.json")
+    let p = try #require(ProcessInfo.processInfo.environment["KAVACHA_MENU_JSON"], "run through make test, which writes the server's menu.json")
     let d = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: p))) as? [String: Any])
     return try #require(d["menus"] as? [[String: Any]])
 }
 
-/// The target a selector row is moved to in a test, so AppKit's dispatch can be seen without a window or the app acting.
-final class Probe: NSObject {
-    var got = [String]()
-    @objc func cut(_ s: Any?) { got.append("cut:") }
-    @objc func copy(_ s: Any?) { got.append("copy:") }
-    @objc func paste(_ s: Any?) { got.append("paste:") }
-    @objc func selectAll(_ s: Any?) { got.append("selectAll:") }
-    @objc func undo(_ s: Any?) { got.append("undo:") }
-    @objc func redo(_ s: Any?) { got.append("redo:") }
-    @objc func toggleFullScreen(_ s: Any?) { got.append("toggleFullScreen:") }
-    @objc func performMiniaturize(_ s: Any?) { got.append("performMiniaturize:") }
-    @objc func performZoom(_ s: Any?) { got.append("performZoom:") }
-    @objc func performClose(_ s: Any?) { got.append("performClose:") }
-    @objc func arrangeInFront(_ s: Any?) { got.append("arrangeInFront:") }
-    @objc func hide(_ s: Any?) { got.append("hide:") }
-    @objc func hideOtherApplications(_ s: Any?) { got.append("hideOtherApplications:") }
-    @objc func unhideAllApplications(_ s: Any?) { got.append("unhideAllApplications:") }
-    @objc func terminate(_ s: Any?) { got.append("terminate:") }
-    @objc func orderFrontStandardAboutPanel(_ s: Any?) { got.append("orderFrontStandardAboutPanel:") }
-}
-
-/// the US keyboard's key codes (Carbon kVK_*), so the event is the one the keyboard sends
-let usKeys: [String: UInt16] = ["a": 0, "s": 1, "d": 2, "f": 3, "h": 4, "g": 5, "z": 6, "x": 7, "c": 8, "v": 9, "b": 11, "q": 12, "w": 13, "e": 14,
-    "r": 15, "y": 16, "t": 17, "1": 18, "2": 19, "3": 20, "4": 21, "6": 22, "5": 23, "=": 24, "9": 25, "7": 26, "-": 27, "8": 28, "0": 29, "]": 30,
-    "o": 31, "u": 32, "[": 33, "i": 34, "p": 35, "\r": 36, "l": 37, "j": 38, "'": 39, "k": 40, ";": 41, "\\": 42, ",": 43, "/": 44, "n": 45, "m": 46,
-    ".": 47, "\t": 48, " ": 49, "`": 50, "\u{1b}": 53, "\u{F702}": 123, "\u{F703}": 124, "\u{F701}": 125, "\u{F700}": 126]
-/// A key-down as the US keyboard gives it: its key code, shift applied to the character, an arrow with the function flag.
-func keyDown(_ key: String, _ mask: NSEvent.ModifierFlags) -> NSEvent {
-    var flags = mask
-    if let u = key.unicodeScalars.first?.value, (0xF700...0xF8FF).contains(u) { flags.formUnion([.function, .numericPad]) }
-    let chars = mask.contains(.shift) ? Menus.usShift[key] ?? key.uppercased() : key
-    return NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: 0, context: nil,
-                            characters: chars, charactersIgnoringModifiers: chars, isARepeat: false, keyCode: usKeys[key] ?? 0)!
-}
-
-/// every row with a key, in menu order, with the item AppKit built for it
-@MainActor func keyed(_ bar: NSMenu) -> [NSMenuItem] {
-    bar.items.compactMap(\.submenu).flatMap(\.items).filter { !$0.keyEquivalent.isEmpty }
-}
-
+typealias Probe = MenuCheck.Probe
+@MainActor func keyDown(_ key: String, _ mask: NSEvent.ModifierFlags) -> NSEvent { MenuCheck.keyDown(key, mask) }
+@MainActor func keyed(_ bar: NSMenu) -> [NSMenuItem] { MenuCheck.keyed(bar) }
 func chord(_ i: NSMenuItem) -> String { "\(i.keyEquivalent)|\(i.keyEquivalentModifierMask.intersection(.deviceIndependentFlagsMask).rawValue)" }
 
 @MainActor @Suite(.serialized) struct ShortcutTests {
-    /// each row of menu.json with a chord: its menu, title, key and mask, in menu order
-    func chords(_ menus: [[String: Any]]) -> [(menu: String, title: String, key: String, mask: NSEvent.ModifierFlags, what: String)] {
-        menus.flatMap { m in (m["items"] as? [[String: Any]] ?? []).compactMap { r in
-            guard let k = r["key"] as? String, let mask = r["mask"] as? Int else { return nil }
-            let what = (r["action"] as? String).map(Menus.js(action:)) ?? r["selector"] as? String ?? r["js"] as? String ?? ""
-            return (m["title"] as! String == "__app__" ? "Leela" : m["title"] as! String, r["title"] as! String, k, NSEvent.ModifierFlags(rawValue: UInt(mask)), what)
-        } }
-    }
+    func chords(_ menus: [[String: Any]]) -> [(menu: String, title: String, key: String, mask: NSEvent.ModifierFlags, what: String)] { MenuCheck.chords(menus) }
 
     @Test func everyRowWithAKeyIsBuiltWithThatChord() throws {
         let menus = try menuJSON(), bar = Menus.build(menus, runner: MenuRunner { _ in })
@@ -140,17 +96,25 @@ func chord(_ i: NSMenuItem) -> String { "\(i.keyEquivalent)|\(i.keyEquivalentMod
 
     @Test func theLaunchersRowsAreKavachasLauncherRows() throws {
         // the server's /app/menu.json carries kavacha's LAUNCHER_ROWS; the copy the launcher uses before the server answers must match
-        let p = try #require(ProcessInfo.processInfo.environment["LEELA_MENU_JSON"])
+        let p = try #require(ProcessInfo.processInfo.environment["KAVACHA_MENU_JSON"])
         let d = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: p))) as? [String: Any])
         let served = try #require(d["launcher"] as? [[String: Any]])
         func key(_ r: [String: Any]) -> String { "\(r["selector"] ?? "")|\(r["key"] ?? "")|\(r["mask"] ?? "")" }
         #expect(served.map(key) == Menus.launcher.map(key))
     }
 
+    @Test func theHeadlessMenuCheckFindsNothingWrong() throws {
+        // the same checks `kavacha-launcher --check-menu <menu.json>` runs
+        let p = try #require(ProcessInfo.processInfo.environment["KAVACHA_MENU_JSON"])
+        #expect(Launcher.checkMenu(URL(fileURLWithPath: p)) == [])
+    }
+
     @Test func undoIsAnEditingRowNeverAnAction() throws {
         // the page sees ⌘Z first (the notebook's own undo); a row that runs an action on it would run twice
-        let bar = Menus.build(try menuJSON(), runner: MenuRunner { _ in })
-        for i in keyed(bar) where i.keyEquivalent == "z" { #expect(i.target == nil, "\(i.title) takes ⌘Z") }
+        // the runner is kept: a menu item holds its target weakly, and a freed runner left every action row looking like an editing row
+        let runner = MenuRunner { _ in }, bar = Menus.build(try menuJSON(), runner: runner)
+        for i in keyed(bar) where i.keyEquivalent == "z" && i.keyEquivalentModifierMask == .command { #expect(i.target == nil, "\(i.title) takes ⌘Z") }
+        #expect(keyed(bar).contains { $0.target === runner }, "action rows point at the runner")
     }
 
     @Test func theFallbackBarHasTheEditingRowsBeforeTheServerAnswers() {

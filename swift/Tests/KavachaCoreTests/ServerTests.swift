@@ -1,9 +1,9 @@
 import Foundation
 import Testing
-@testable import LeelaCore
+@testable import KavachaCore
 
 @Suite struct ServerCommandTests {
-    let info = HostInfo(url: "http://127.0.0.1:4567", token: "secret-token-123", appVersion: "1.0.0", bundle: "/Applications/Leela.app", uv: URL(fileURLWithPath: "/x/uv"))
+    let info = HostInfo(url: "http://127.0.0.1:4567", token: "secret-token-123", appVersion: "1.0.0", bundle: "/Applications/App.app", uv: URL(fileURLWithPath: "/x/uv"))
 
     @Test func theTokenGoesOnStdinAndNowhereElse() async throws {
         let s = store(), lock = tempDir(); makeLock(lock, n: 3)
@@ -11,9 +11,9 @@ import Testing
         let l = ServerCommand.launch(store: s, port: 5123, hash: h, host: info)
         #expect(l.stdinLine == "secret-token-123")
         #expect(!l.env.values.contains { $0.contains("secret-token-123") } && !l.args.contains { $0.contains("secret-token-123") })
-        #expect(l.env["LEELA_HOST_TOKEN"] == nil && l.env["LEELA_HOST_URL"] == "http://127.0.0.1:4567" && l.env["LEELA_LOCK_N"] == "3" && l.env["LEELA_ENV_HASH"] == h)
+        #expect(l.env["APP_HOST_TOKEN"] == nil && l.env["APP_HOST_URL"] == "http://127.0.0.1:4567" && l.env["APP_LOCK_N"] == "3" && l.env["APP_ENV_HASH"] == h)
         #expect(!l.env.keys.contains { $0.hasPrefix("UV_") } && l.env["VIRTUAL_ENV"] == nil && !l.env["PATH"]!.contains(s.paths.env(h).path))
-        #expect(l.executable == s.paths.server(h) && l.args == ["--app", "--shell", "none", "--port", "5123", "--gateway-port", "0"])
+        #expect(l.executable == s.paths.server(h) && l.args == ["--app", "--port", "5123"])
     }
 
     @Test func aStartedChildReadsTheLineThenEndOfFile() async throws {

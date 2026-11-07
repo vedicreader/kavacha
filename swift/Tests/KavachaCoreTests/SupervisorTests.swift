@@ -1,8 +1,8 @@
 import Foundation
 import Testing
-@testable import LeelaCore
+@testable import KavachaCore
 
-/// The system Python runs a small HTTP server in place of Leela. Arguments: the port, then the seconds before it stops with exit code 3
+/// The system Python runs a small HTTP server in place of the app's server. Arguments: the port, then the seconds before it stops with exit code 3
 /// (0: never; less than 0: stop at once with exit code 2; 999: never answer /health).
 let fakeLeela = """
 import sys, os, threading, http.server, time
@@ -88,7 +88,7 @@ func py(_ port: Int, _ die: Double) -> Launch {
         sup.healthTimeout = .seconds(2)
         await sup.start()
         guard case .failed(let msg) = sup.phase else { Issue.record("phase \(sup.phase)"); return }
-        #expect(msg.hasPrefix("The Leela server did not start."))
+        #expect(msg.hasPrefix("The App server did not start."))
     }
 
     @Test func aCrashGivesStartAgainAndStartAgainWorks() async throws {

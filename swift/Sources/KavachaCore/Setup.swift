@@ -14,11 +14,11 @@ public enum SetupPhase: Equatable, Sendable {
     public var title: String {
         switch self {
         case .checking: "Checking for the newest version"
-        case .python: "Getting Python 3.13"
+        case .python: "Getting Python \(Kavacha.config.python)"
         case .packages(let d, let t, _): t > 0 ? "Getting packages (\(Setup.mb(d)) of about \(Setup.mb(t)))" : "Getting packages (\(Setup.mb(d)))"
         case .installing(let n, _): n > 0 ? "Installing packages (\(n))" : "Installing packages"
         case .verifying: "Checking the packages"
-        case .starting: "Starting Leela"
+        case .starting: "Starting \(Kavacha.config.name)"
         }
     }
 
@@ -76,7 +76,7 @@ public enum Setup {
     /// the short reason a failed setup shows, then the last log lines
     public static func failure(_ reason: String, log: URL) -> String { reason + "\n\n" + Run.tail(log) }
 
-    public static let offline = "Leela needs the internet the first time, to get Python and its packages. It tries again when this Mac is online."
-    public static let buildFailed = "Setup did not complete. Leela did not change anything that already works."
-    public static let updateFailed = "The update did not install. Leela still runs the current version."
+    public static var offline: String { "\(Kavacha.config.name) needs the internet the first time, to get Python and its packages. It tries again when this Mac is online." }
+    public static var buildFailed: String { "Setup did not complete. \(Kavacha.config.name) did not change anything that already works." }
+    public static var updateFailed: String { "The update did not install. \(Kavacha.config.name) still runs the current version." }
 }

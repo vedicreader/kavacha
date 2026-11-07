@@ -101,8 +101,8 @@ public final class Supervisor {
         }
         guard gen == generation, !stopping else { return }
         guard let h = run else {
-            if needsApp != nil { return set(.failed("This Leela app is too old for the newest packages. Update the Leela app.")) }
-            return set(p == nil && why != nil ? .offline : .failed("Leela has no packages to run. " + (why ?? "")))
+            if needsApp != nil { return set(.failed("This \(Kavacha.config.name) app is too old for the newest packages. Update the \(Kavacha.config.name) app.")) }
+            return set(p == nil && why != nil ? .offline : .failed("\(Kavacha.config.name) has no packages to run. " + (why ?? "")))
         }
         await launch(h, gen: gen)
     }
@@ -161,7 +161,7 @@ public final class Supervisor {
                     return await launch(prev, gen: gen)
                 }
                 if attempt < tries, error as? HealthError == .exited { continue }
-                return set(.failed("The Leela server did not start.\n\n" + Run.tail(store.paths.serverLog)))
+                return set(.failed("The \(Kavacha.config.name) server did not start.\n\n" + Run.tail(store.paths.serverLog)))
             }
         }
     }
@@ -169,7 +169,7 @@ public final class Supervisor {
     private func exited(code: Int32, gen: Int) {
         guard gen == generation, !stopping, case .ready = phase else { return }
         server = nil
-        set(.failed("The Leela server stopped (exit code \(code)).\n\n" + Run.tail(store.paths.serverLog)))
+        set(.failed("The \(Kavacha.config.name) server stopped (exit code \(code)).\n\n" + Run.tail(store.paths.serverLog)))
     }
 
     /// stops the server and a build that runs: SIGTERM, then SIGKILL after `grace` seconds
@@ -181,7 +181,7 @@ public final class Supervisor {
         if case .setup = phase { set(.idle) }
     }
 
-    /// Update for a lock: build the offered env at low priority while Leela runs, then wait for "Restart to update"
+    /// Update for a lock: build the offered env at low priority while the app runs, then wait for "Restart to update"
     public func buildUpdate() async {
         guard let p = offered, update.state != "running" else { return }
         update = UpdateState(state: "running", line: "getting the new packages")
@@ -195,7 +195,7 @@ public final class Supervisor {
         } catch { update = UpdateState(state: "error", line: Setup.updateFailed) }
     }
 
-    /// the 6-hourly channel check while Leela runs: a newer good lock is offered, never built without a click
+    /// the 6-hourly channel check while the app runs: a newer good lock is offered, never built without a click
     public func checkForUpdates() async {
         guard case .ready = phase, let cur = hash else { return }
         let (p, _) = await plan()
@@ -213,7 +213,7 @@ public final class Supervisor {
     /// "Restart to update" and "Start again": the pending env, if any, becomes current at this start
     public func restart() async { await start() }
 
-    /// Leela > Use Previous Version
+    /// <Name> > Use Previous Version
     public func usePrevious() async -> Bool {
         guard (try? store.rollback(bad: false)) == true else { return false }
         await restart()

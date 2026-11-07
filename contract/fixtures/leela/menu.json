@@ -1,0 +1,854 @@
+{
+ "menus": [
+  {
+   "title": "__app__",
+   "items": [
+    {
+     "title": "Check for updates…",
+     "action": "check_updates"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Settings",
+     "action": "settings",
+     "key": ",",
+     "mask": 1048576
+    },
+    {
+     "title": "Models and updates",
+     "action": "setup_models"
+    }
+   ]
+  },
+  {
+   "title": "File",
+   "items": [
+    {
+     "title": "New file",
+     "action": "new_file",
+     "key": "n",
+     "mask": 1048576
+    },
+    {
+     "title": "New notebook",
+     "action": "new_notebook",
+     "key": "N",
+     "mask": 1048576
+    },
+    {
+     "title": "New lesson notebook",
+     "action": "new_lesson"
+    },
+    {
+     "title": "New folder",
+     "action": "new_dir"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Open…",
+     "action": "open_folder",
+     "key": "o",
+     "mask": 1048576
+    },
+    {
+     "title": "Go to file…",
+     "action": "quick_open",
+     "key": "p",
+     "mask": 1048576
+    },
+    {
+     "title": "Add folder to this window",
+     "action": "add_root"
+    },
+    {
+     "title": "Recent files",
+     "action": "recent_tabs",
+     "key": "e",
+     "mask": 1048576
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Save",
+     "action": "save",
+     "key": "s",
+     "mask": 1048576
+    },
+    {
+     "title": "Save all",
+     "action": "save_all",
+     "key": "S",
+     "mask": 524288
+    },
+    {
+     "title": "Reload from disk",
+     "action": "reload_file"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Close tab",
+     "action": "close_tab",
+     "key": "w",
+     "mask": 1048576
+    },
+    {
+     "title": "Close other tabs",
+     "action": "close_others"
+    },
+    {
+     "title": "Close tabs to the right",
+     "action": "close_right"
+    },
+    {
+     "title": "Close saved tabs",
+     "action": "close_saved"
+    },
+    {
+     "title": "Remove folder from workspace",
+     "action": "remove_root"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Copy relative path",
+     "action": "copy_rel_path",
+     "key": "y",
+     "mask": 524288
+    },
+    {
+     "title": "Copy absolute path",
+     "action": "copy_abs_path",
+     "key": "Y",
+     "mask": 524288
+    }
+   ]
+  },
+  {
+   "title": "Edit",
+   "items": [
+    {
+     "title": "Undo workspace operation",
+     "action": "workspace_undo",
+     "key": "z",
+     "mask": 1572864
+    },
+    {
+     "title": "Redo workspace operation",
+     "action": "workspace_redo",
+     "key": "Z",
+     "mask": 1572864
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Cut",
+     "selector": "cut:",
+     "key": "x",
+     "mask": 1048576
+    },
+    {
+     "title": "Copy",
+     "selector": "copy:",
+     "key": "c",
+     "mask": 1048576
+    },
+    {
+     "title": "Paste",
+     "selector": "paste:",
+     "key": "v",
+     "mask": 1048576
+    },
+    {
+     "title": "Select All",
+     "selector": "selectAll:",
+     "key": "a",
+     "mask": 1048576
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Find across cells",
+     "action": "find_in_file",
+     "key": "f",
+     "mask": 1048576
+    },
+    {
+     "title": "Search code",
+     "action": "code_search",
+     "key": "F",
+     "mask": 1048576
+    },
+    {
+     "title": "Replace in workspace",
+     "action": "replace_workspace",
+     "key": "H",
+     "mask": 1048576
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Toggle comment",
+     "action": "comment",
+     "key": "/",
+     "mask": 1048576
+    },
+    {
+     "title": "Format document",
+     "action": "format_doc",
+     "key": "F",
+     "mask": 524288
+    },
+    {
+     "title": "Complete",
+     "action": "complete",
+     "key": "/",
+     "mask": 524288
+    },
+    {
+     "title": "Ai completion",
+     "action": "ai_complete",
+     "key": " ",
+     "mask": 655360
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Rename symbol",
+     "action": "rename_symbol",
+     "key": "r",
+     "mask": 1572864
+    },
+    {
+     "title": "Extract variable",
+     "action": "extract_variable",
+     "key": "v",
+     "mask": 1572864
+    },
+    {
+     "title": "Extract method / function",
+     "action": "extract_method",
+     "key": "m",
+     "mask": 1572864
+    },
+    {
+     "title": "Extract constant",
+     "action": "extract_constant",
+     "key": "c",
+     "mask": 1572864
+    },
+    {
+     "title": "Inline variable",
+     "action": "inline_variable",
+     "key": "n",
+     "mask": 1572864
+    },
+    {
+     "title": "Move function or class to a file",
+     "action": "move_symbol",
+     "key": "f",
+     "mask": 1572864
+    }
+   ]
+  },
+  {
+   "title": "View",
+   "items": [
+    {
+     "title": "Toggle file pane",
+     "action": "toggle_left",
+     "key": "B",
+     "mask": 524288
+    },
+    {
+     "title": "Toggle agent / variables pane",
+     "action": "toggle_right",
+     "key": "V",
+     "mask": 524288
+    },
+    {
+     "title": "Toggle bottom tools",
+     "action": "toggle_bottom",
+     "key": "j",
+     "mask": 1048576
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Files",
+     "action": "focus_files",
+     "key": "1",
+     "mask": 1048576
+    },
+    {
+     "title": "Editor",
+     "action": "focus_editor",
+     "key": "2",
+     "mask": 1048576
+    },
+    {
+     "title": "Exec",
+     "action": "focus_exec",
+     "key": "3",
+     "mask": 1048576
+    },
+    {
+     "title": "Variables",
+     "action": "focus_vars",
+     "key": "4",
+     "mask": 1048576
+    },
+    {
+     "title": "Agent",
+     "action": "focus_agent",
+     "key": "5",
+     "mask": 1048576
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Source control panel",
+     "action": "panel_git",
+     "key": "g",
+     "mask": 524288
+    },
+    {
+     "title": "Releases panel",
+     "action": "panel_releases",
+     "key": "p",
+     "mask": 524288
+    },
+    {
+     "title": "Deploys panel",
+     "action": "panel_deploys",
+     "key": "d",
+     "mask": 524288
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "What changed",
+     "action": "show_diff",
+     "key": "D",
+     "mask": 524288
+    },
+    {
+     "title": "Local file history",
+     "action": "local_history",
+     "key": "h",
+     "mask": 524288
+    },
+    {
+     "title": "Who wrote this",
+     "action": "git_blame",
+     "key": "b",
+     "mask": 524288
+    },
+    {
+     "title": "Show dotfiles",
+     "action": "show_hidden"
+    },
+    {
+     "title": "Refresh",
+     "action": "refresh_files"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Present notebook as slides",
+     "action": "present_notebook",
+     "key": "r",
+     "mask": 524288
+    },
+    {
+     "title": "Leave full screen pane",
+     "action": "leave_full_screen",
+     "key": "E",
+     "mask": 1048576
+    },
+    {
+     "title": "Enter Full Screen",
+     "selector": "toggleFullScreen:",
+     "key": "f",
+     "mask": 1310720
+    }
+   ]
+  },
+  {
+   "title": "Run",
+   "items": [
+    {
+     "title": "Run cell",
+     "action": "run_cell"
+    },
+    {
+     "title": "Run and select below",
+     "action": "run_advance"
+    },
+    {
+     "title": "Run and insert below",
+     "action": "run_insert",
+     "key": "\r",
+     "mask": 524288
+    },
+    {
+     "title": "Run all cells above",
+     "action": "run_above"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Run every cell",
+     "action": "run_all"
+    },
+    {
+     "title": "Run this script",
+     "action": "run_file",
+     "key": "\r",
+     "mask": 1572864
+    },
+    {
+     "title": "Run the selection in the kernel",
+     "action": "run_selection",
+     "key": "\r",
+     "mask": 655360
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Run a configuration",
+     "action": "run_app",
+     "key": "A",
+     "mask": 524288
+    },
+    {
+     "title": "Run configurations",
+     "action": "edit_runs"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Interrupt kernel",
+     "action": "interrupt",
+     "key": "I",
+     "mask": 524288
+    },
+    {
+     "title": "Restart kernel",
+     "action": "restart",
+     "key": "R",
+     "mask": 524288
+    },
+    {
+     "title": "Restart kernel and run all",
+     "action": "restart_run_all"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Choose kernel",
+     "action": "pick_kernel",
+     "key": "K",
+     "mask": 524288
+    },
+    {
+     "title": "Watch another env",
+     "action": "switch_env",
+     "key": "E",
+     "mask": 524288
+    },
+    {
+     "title": "Live / isolated",
+     "action": "toggle_scope",
+     "key": "t",
+     "mask": 524288
+    },
+    {
+     "title": "Clear all outputs",
+     "action": "clear_all_outputs",
+     "key": "\b",
+     "mask": 1179648
+    }
+   ]
+  },
+  {
+   "title": "Tools",
+   "items": [
+    {
+     "title": "Command palette",
+     "action": "palette",
+     "key": "P",
+     "mask": 1048576
+    },
+    {
+     "title": "Keys",
+     "action": "help",
+     "key": "?",
+     "mask": 1048576
+    },
+    {
+     "title": "Edit keybindings",
+     "action": "edit_keys",
+     "key": "k",
+     "mask": 1572864
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Terminal",
+     "action": "terminal",
+     "key": "`",
+     "mask": 262144
+    },
+    {
+     "title": "Lazygit",
+     "action": "git",
+     "key": "G",
+     "mask": 524288
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Find repository",
+     "action": "find_repo",
+     "key": "O",
+     "mask": 1048576
+    },
+    {
+     "title": "Declaration or usages",
+     "action": "find_definition",
+     "key": "b",
+     "mask": 1048576
+    },
+    {
+     "title": "Find usages",
+     "action": "find_usages",
+     "key": "f",
+     "mask": 524288
+    },
+    {
+     "title": "Docs for symbol",
+     "action": "show_docs",
+     "key": "H",
+     "mask": 524288
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Sync Kosha index",
+     "action": "sync_index"
+    },
+    {
+     "title": "Nbdev prepare",
+     "action": "nbdev_prepare"
+    },
+    {
+     "title": "Fastship release tools",
+     "action": "fastship"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Search the web",
+     "action": "web_search",
+     "key": "W",
+     "mask": 524288
+    },
+    {
+     "title": "Research a question",
+     "action": "research",
+     "key": "Q",
+     "mask": 524288
+    },
+    {
+     "title": "Read a url",
+     "action": "read_url",
+     "key": "U",
+     "mask": 524288
+    },
+    {
+     "title": "Browse a url in a tab",
+     "action": "browse_url",
+     "key": "O",
+     "mask": 524288
+    },
+    {
+     "title": "Adopt a page open in the browser",
+     "action": "browse_tabs"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Ask AI about the selection",
+     "action": "ask_ai",
+     "key": "q",
+     "mask": 524288
+    },
+    {
+     "title": "Summarise the selection",
+     "action": "summarise"
+    },
+    {
+     "title": "Send selection to the agent",
+     "action": "agent_selection",
+     "key": "N",
+     "mask": 524288
+    },
+    {
+     "title": "Inline Completions…",
+     "js": "showCompletions()"
+    },
+    {
+     "title": "Screenshot for the assistant",
+     "action": "capture",
+     "key": "P",
+     "mask": 524288
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Open the vault",
+     "action": "open_vault",
+     "key": "v",
+     "mask": 524288
+    },
+    {
+     "title": "Read a file into the vault",
+     "action": "vault_read"
+    },
+    {
+     "title": "Find in the vault",
+     "action": "vault_find"
+    },
+    {
+     "title": "Vault review queue",
+     "action": "vault_review"
+    },
+    {
+     "title": "Review what the agent learned",
+     "action": "learned_review"
+    },
+    {
+     "title": "Vault settings: vaults, privacy, cadence, tidy",
+     "action": "vault_settings"
+    },
+    {
+     "title": "Manage memory notes",
+     "action": "memory_notes"
+    },
+    {
+     "title": "Create a memory note",
+     "action": "new_memory_note"
+    },
+    {
+     "title": "Clip into the vault",
+     "action": "clip_to_vault"
+    }
+   ]
+  },
+  {
+   "title": "Debug",
+   "items": [
+    {
+     "title": "Debug This File",
+     "js": "leeDebugFile()"
+    },
+    {
+     "title": "Run a configuration",
+     "action": "run_app",
+     "key": "A",
+     "mask": 524288
+    },
+    {
+     "title": "Run configurations",
+     "action": "edit_runs"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Continue",
+     "js": "leeDebugControl('continue')"
+    },
+    {
+     "title": "Step Over",
+     "js": "leeDebugControl('next')"
+    },
+    {
+     "title": "Step Into",
+     "js": "leeDebugControl('stepIn')"
+    },
+    {
+     "title": "Step Out",
+     "js": "leeDebugControl('stepOut')"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Stop Debugger",
+     "js": "leeDebugStop()"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Interrupt kernel",
+     "action": "interrupt",
+     "key": "I",
+     "mask": 524288
+    },
+    {
+     "title": "Restart kernel",
+     "action": "restart",
+     "key": "R",
+     "mask": 524288
+    }
+   ]
+  },
+  {
+   "title": "Window",
+   "items": [
+    {
+     "title": "Minimize",
+     "selector": "performMiniaturize:",
+     "key": "m",
+     "mask": 1048576
+    },
+    {
+     "title": "Zoom",
+     "selector": "performZoom:"
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Next tab",
+     "action": "next_tab",
+     "key": "]",
+     "mask": 524288
+    },
+    {
+     "title": "Previous tab",
+     "action": "prev_tab",
+     "key": "[",
+     "mask": 524288
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Close tab",
+     "action": "close_tab",
+     "key": "w",
+     "mask": 1048576
+    },
+    {
+     "title": "Close Window",
+     "selector": "performClose:",
+     "key": "W",
+     "mask": 1048576
+    },
+    {
+     "sep": true
+    },
+    {
+     "title": "Bring All to Front",
+     "selector": "arrangeInFront:"
+    }
+   ]
+  },
+  {
+   "title": "Help",
+   "items": [
+    {
+     "title": "Keys",
+     "action": "help",
+     "key": "?",
+     "mask": 1048576
+    },
+    {
+     "title": "Edit keybindings",
+     "action": "edit_keys",
+     "key": "k",
+     "mask": 1572864
+    }
+   ]
+  }
+ ],
+ "launcher": [
+  {
+   "title": "Quit",
+   "selector": "terminate:",
+   "key": "q",
+   "mask": 1048576
+  },
+  {
+   "title": "Hide",
+   "selector": "hide:",
+   "key": "h",
+   "mask": 1048576
+  },
+  {
+   "title": "Hide Others",
+   "selector": "hideOtherApplications:",
+   "key": "h",
+   "mask": 1572864
+  },
+  {
+   "title": "Close Window",
+   "selector": "performClose:",
+   "key": "W",
+   "mask": 1048576
+  },
+  {
+   "title": "Undo",
+   "selector": "undo:",
+   "key": "z",
+   "mask": 1048576
+  },
+  {
+   "title": "Redo",
+   "selector": "redo:",
+   "key": "Z",
+   "mask": 1048576
+  },
+  {
+   "title": "Minimize",
+   "selector": "performMiniaturize:",
+   "key": "m",
+   "mask": 1048576
+  },
+  {
+   "title": "Enter Full Screen",
+   "selector": "toggleFullScreen:",
+   "key": "f",
+   "mask": 1310720
+  }
+ ]
+}

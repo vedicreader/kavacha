@@ -1,11 +1,10 @@
 import Foundation
 
-/// manifest.json of one lock. See docs/thin-app.md.
+/// manifest.json of one lock; the app version under its package name is not read here. See contract/api-1.md.
 public struct Manifest: Codable, Equatable, Sendable {
     public var n: Int
     public var hash: String
     public var files: [String: String]
-    public var leela: String?
     public var python: String
     public var uv_min: String
     public var launcher_api_min: Int

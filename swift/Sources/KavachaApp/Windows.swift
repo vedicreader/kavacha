@@ -1,10 +1,10 @@
 import AppKit
-import LeelaCore
+import KavachaCore
 import WebKit
 
 /// The page's view: its native context menu is empty, as in the old app, unless the inspector is on.
 /// A file or folder dragged in from another app opens as a Finder open does; a drag inside the page stays the page's.
-final class LeelaWebView: WKWebView {
+final class KavachaWebView: WKWebView {
     var debug = false
     /// what a drop from outside opens; `Windows.make` sends it to the app's open events
     var onFiles: (([URL]) -> Void)?
@@ -36,15 +36,16 @@ enum Nav: Equatable { case allow, download, browser, cancel }
 /// One WKWebView window per workspace, keyed by its slug; the bridge shim in each page.
 @MainActor
 final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandlerWithReply, NSWindowDelegate, WKDownloadDelegate {
-    static let homeKey = "leela:home"
+    static var homeKey: String { Kavacha.config.window.home }
     /// kavacha's DEFAULT_SIZE and MIN_SIZE
-    static let size = NSSize(width: 1440, height: 900), minSize = NSSize(width: 900, height: 560)
+    static var size: NSSize { let s = Kavacha.config.window.size; return NSSize(width: s[0], height: s[1]) }
+    static var minSize: NSSize { let s = Kavacha.config.window.min_size; return NSSize(width: s[0], height: s[1]) }
     /// kavacha's NO_SUBSTITUTION: smart quotes and dashes would change code as it is typed
     static let noSubstitution = ["NSAutomaticQuoteSubstitutionEnabled", "NSAutomaticDashSubstitutionEnabled", "NSAutomaticTextReplacementEnabled",
                                  "NSAutomaticSpellingCorrectionEnabled", "NSAutomaticPeriodSubstitutionEnabled", "NSAutomaticCapitalizationEnabled",
                                  "NSAutomaticInlinePredictionEnabled"]
-    /// the old app's `LEELA_WEBVIEW_DEBUG`: the inspector and the native context menu
-    static let debug = !(ProcessInfo.processInfo.environment["LEELA_WEBVIEW_DEBUG"] ?? "").isEmpty
+    /// `<PREFIX>WEBVIEW_DEBUG`: the inspector and the native context menu
+    static var debug: Bool { !(ProcessInfo.processInfo.environment[Kavacha.config.debug_env] ?? "").isEmpty }
     var port = 0
     var background = NSColor.windowBackgroundColor
     var windows: [String: (NSWindow, WKWebView)] = [:]
@@ -85,9 +86,9 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     func make(_ url: URL, title: String) -> (NSWindow, WKWebView) {
         let c = WKWebViewConfiguration()
         c.websiteDataStore = .default()
-        c.userContentController.addUserScript(WKUserScript(source: Bridge.shim, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        c.userContentController.addUserScript(WKUserScript(source: Bridge.shim(), injectionTime: .atDocumentStart, forMainFrameOnly: true))
         c.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: Bridge.handler)
-        let v = LeelaWebView(frame: .zero, configuration: c)
+        let v = KavachaWebView(frame: .zero, configuration: c)
         v.debug = Self.debug; v.isInspectable = Self.debug
         v.onFiles = { [weak self] urls in self?.app?.application(NSApp, open: urls) }
         v.navigationDelegate = self; v.uiDelegate = self
@@ -103,18 +104,18 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     }
 
     /// shows the window for `url`, opening it when there is none
-    func show(_ url: URL, title: String = "Leela") {
+    func show(_ url: URL, title: String = Kavacha.config.name) {
         hidden.removeAll { $0 == key(url) }
-        // a Finder open or a question while Leela is behind another app comes forward, as kavacha's bring_forward
+        // a Finder open or a question while the app is behind another app comes forward, as kavacha's bring_forward
         NSApp.activate()
         let w = reuse(url, title: title) ?? place(url, title: title)
         w.makeKeyAndOrderFront(nil)
     }
 
     /// the open window for `url` with `title`, its page loaded again when it has none; nil when there is no window
-    func reuse(_ url: URL, title: String = "Leela") -> NSWindow? {
+    func reuse(_ url: URL, title: String = Kavacha.config.name) -> NSWindow? {
         guard let (w, v) = windows[key(url)] else { return nil }
-        if title != "Leela" { w.title = title }
+        if title != Kavacha.config.name { w.title = title }
         if v.url == nil || failed.contains(ObjectIdentifier(v)) { point(v, url) }
         return w
     }
@@ -122,7 +123,7 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     /// a new window for `url`, not on screen yet, its page loading
     func place(_ url: URL, title: String) -> NSWindow {
         let k = key(url), (w, v) = make(url, title: title)
-        w.setFrameAutosaveName("leela-\(k)")
+        w.setFrameAutosaveName("\(Kavacha.config.name.lowercased())-\(k)")
         if windows.isEmpty { w.center() } else { w.cascadeTopLeft(from: NSPoint(x: 40, y: 40)) }
         windows[k] = (w, v)
         point(v, url)
@@ -167,7 +168,7 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     func unreachable(_ v: WKWebView, _ url: URL, why: String = "it did not answer") {
         failed.insert(ObjectIdentifier(v))
         let esc = { (s: String) in s.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;") }
-        v.loadHTMLString("<body style='font:14px -apple-system;margin:3em'><p>Leela could not show \(esc(url.absoluteString)): \(esc(why)).</p><p>Open the file or folder again to try once more.</p></body>", baseURL: nil)
+        v.loadHTMLString("<body style='font:14px -apple-system;margin:3em'><p>\(Kavacha.config.name) could not show \(esc(url.absoluteString)): \(esc(why)).</p><p>Open the file or folder again to try once more.</p></body>", baseURL: nil)
     }
 
     func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) { gone(w, e) }
@@ -217,7 +218,7 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         NSApp.activate(); w.makeKeyAndOrderFront(nil); return true
     }
 
-    /// a file panel as a sheet on Leela's window: a free panel lets a tiling window manager move Leela away; the window comes back to the front after
+    /// a file panel as a sheet on the app's window: a free panel lets a tiling window manager move the app away; the window comes back to the front after
     func sheet(_ p: NSSavePanel, on w: NSWindow? = nil, _ done: @escaping (Bool) -> Void) {
         guard let w = w ?? forQuestion() else { return done(p.runModal() == .OK) }
         NSApp.activate()
@@ -235,7 +236,7 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     func userContentController(_ c: WKUserContentController, didReceive m: WKScriptMessage, replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
         let o = m.frameInfo.securityOrigin
         guard m.frameInfo.isMainFrame, o.protocol == "http", ours(o.port), Self.loopback(o.host)
-        else { return replyHandler(nil, "not a Leela page") }
+        else { return replyHandler(nil, "not a page of \(Kavacha.config.name)") }
         switch Bridge.route(m.body) {
         case .openFolder(let p): app?.openFolder(p, trusted: false); replyHandler(true, nil)
         case .pickFolder: app?.pickFolder(on: m.webView?.window) { replyHandler($0, nil) }
@@ -344,7 +345,7 @@ final class MenuRunner: NSObject {
 }
 
 /// The menu bar. AppKit lets a row with no shift take the shifted chord of a key that has no case (⌥↩ took ⌥⇧↩), so a row whose chord is exactly the event's goes first.
-final class LeelaBar: NSMenu {
+final class ExactBar: NSMenu {
     override func performKeyEquivalent(with e: NSEvent) -> Bool {
         let m = e.modifierFlags.intersection([.command, .option, .control, .shift])
         if m.contains(.shift), let c = e.charactersIgnoringModifiers, c.lowercased() == c.uppercased() {
@@ -367,11 +368,11 @@ enum Menus {
 
     /// the bar; `app` is the target of the launcher's own rows (Use Previous Version, Show Server Log)
     static func build(_ menus: [[String: Any]], launcher: [[String: Any]] = Menus.launcher, runner: MenuRunner, app: AnyObject? = nil) -> NSMenu {
-        let bar = LeelaBar()
-        let appItem = NSMenuItem(), appMenu = NSMenu(title: "Leela")
+        let bar = ExactBar()
+        let appItem = NSMenuItem(), appMenu = NSMenu(title: Kavacha.config.name)
         appItem.submenu = appMenu
         bar.addItem(appItem)
-        appMenu.addItem(withTitle: "About Leela", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About \(Kavacha.config.name)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
         for m in menus where m["title"] as? String == "__app__" { for row in m["items"] as? [[String: Any]] ?? [] { appMenu.addItem(item(row, runner)) } }
         appMenu.addItem(.separator())
@@ -382,11 +383,11 @@ enum Menus {
         appMenu.addItem(withTitle: "Services", action: nil, keyEquivalent: "").submenu = services
         NSApplication.shared.servicesMenu = services
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Hide Leela", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Hide \(Kavacha.config.name)", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h").keyEquivalentModifierMask = [.command, .option]
         appMenu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit Leela", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit \(Kavacha.config.name)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         for m in menus {
             guard let t = m["title"] as? String, t != "__app__" else { continue }
             let it = NSMenuItem(), sub = NSMenu(title: t)
@@ -471,8 +472,8 @@ enum Menus {
         return usShift[k].map { ($0, m.subtracting(.shift)) } ?? (k, m)
     }
 
-    /// what an action row runs: the page's own dispatcher, as the old app's `leeAct("…")`
-    static func js(action a: String) -> String { "leeAct(\(jsString(a)))" }
+    /// what an action row runs: the page's own dispatcher, `menu_action_js` with the action as a JSON string
+    static func js(action a: String) -> String { Kavacha.config.menu_action_js.replacingOccurrences(of: "{action}", with: jsString(a)) }
 
     static func jsString(_ s: String) -> String {
         let d = try? JSONSerialization.data(withJSONObject: [s])

@@ -1,6 +1,6 @@
 import Foundation
 
-/// packaging/childenv.json: the child environment that the launcher and tools/lock.py both build from one file.
+/// childenv.json: the child environment that the launcher and kavacha.lock both build from one file.
 public struct ChildEnv: Codable, Sendable, Equatable {
     public var api: Int
     public var drop: [String]
