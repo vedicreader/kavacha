@@ -191,7 +191,7 @@ def test_signing_keeps_hardlinked_copies_one_file(tmp_path):
     lib = app/'Contents'/'Resources'/'lib'
     for n in ('one', 'two'): (lib/n).mkdir(parents=True)
     shutil.copy(mac/'Demo', lib/'one'/'node'); os.link(lib/'one'/'node', lib/'two'/'node')
-    sign(app, '-', run=lambda *a: subprocess.run([str(x) for x in a], check=True, capture_output=True))
+    sign(app, '-', run=lambda *a, **kw: subprocess.run([str(x) for x in a], check=True, capture_output=True))
     assert os.stat(lib/'one'/'node').st_ino == os.stat(lib/'two'/'node').st_ino
     subprocess.run(['codesign', '--verify', '--strict', lib/'two'/'node'], check=True)
 
@@ -209,7 +209,7 @@ def test_a_bundle_with_a_symlinked_driver_signs_and_verifies_strictly(tmp_path):
     for n in ('playwright', 'patchright'): (lib/n/'driver').mkdir(parents=True)
     shutil.copy(mac/'Demo', lib/'playwright'/'driver'/'node'); os.link(lib/'playwright'/'driver'/'node', lib/'patchright'/'driver'/'node')
     link_duplicates(app, ['playwright', 'patchright'], floor=1, symlink=True)
-    sign(app, '-', run=lambda *a: subprocess.run([str(x) for x in a], check=True, capture_output=True))
+    sign(app, '-', run=lambda *a, **kw: subprocess.run([str(x) for x in a], check=True, capture_output=True))
     if not shutil.which('ditto'): return
     subprocess.run(['ditto', '-c', '-k', '--keepParent', app, z := tmp_path/'Demo.zip'], check=True)
     subprocess.run(['ditto', '-x', '-k', z, out := tmp_path/'out'], check=True)

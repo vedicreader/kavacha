@@ -2,7 +2,7 @@
 
 # %% ../nbs/02_bundle.ipynb #4767bcd3
 from __future__ import annotations
-import compileall, hashlib, os, py_compile, shutil, struct, subprocess, sys, zipfile
+import compileall, hashlib, os, py_compile, shutil, struct, subprocess, sys, time, zipfile
 from fastcore.all import Path, first
 
 # %% auto #0
@@ -203,11 +203,25 @@ def mend_frameworks(app, search=()):
     return dict(mended=mended, clashes=clashes)
 
 # %% ../nbs/02_bundle.ipynb #a69856ea
-def _run(*args): return subprocess.run([str(a) for a in args], check=True)
+def _run(*args, **kw): return subprocess.run([str(a) for a in args], check=True, **kw)
 
-def sign(app, identity, entitlements=None, run=None):
+_NO_STAMP = ('a timestamp was expected but was not found', 'the timestamp service is not available')
+
+def _codesign(run, args, waits):
+    "Run one signing `codesign` call, trying again after each of `waits` seconds while Apple's timestamp server does not answer."
+    for w in (*waits, None):
+        try: return run(*args, stderr=subprocess.PIPE, text=True)
+        except subprocess.CalledProcessError as e:
+            err = e.stderr.decode(errors='replace') if isinstance(e.stderr, bytes) else e.stderr or ''
+            sys.stderr.write(err)
+            if w is None or not any(m in err.lower() for m in _NO_STAMP): raise
+            print(f'timestamp server did not answer for {args[-1]}; trying again in {w} s')
+            time.sleep(w)
+
+def sign(app, identity, entitlements=None, run=None, waits=(5, 15, 30)):
     "Code-sign every Mach-O file deepest first, then each framework, then the bundle, signing hardlinked files once and never using `--deep`."
     app, run = Path(app), run or _run
+    cs = lambda *a: _codesign(run, a, waits)
     hard = ('codesign', '--force', '--options', 'runtime', '--timestamp=none' if identity == '-' else '--timestamp')
     ent = lambda on: ['--entitlements', entitlements] if on and entitlements else []
     main = app/'Contents'/'MacOS'/app.stem
@@ -216,12 +230,12 @@ def sign(app, identity, entitlements=None, run=None):
     inodes = {}
     for p in files: inodes.setdefault(os.stat(p).st_ino, []).append(p)
     for p, *same in inodes.values():
-        run(*hard, *ent(p.stat().st_mode & 0o111 and p.suffix not in ('.so', '.dylib')), '--sign', identity, p)
+        cs(*hard, *ent(p.stat().st_mode & 0o111 and p.suffix not in ('.so', '.dylib')), '--sign', identity, p)
         for q in same:
             if os.stat(q).st_ino != os.stat(p).st_ino: q.unlink(); os.link(p, q)
     for p in sorted((p for p in app.rglob('*.framework') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
-        run(*hard, '--sign', identity, p)
-    run(*hard, *ent(True), '--sign', identity, app)
+        cs(*hard, '--sign', identity, p)
+    cs(*hard, *ent(True), '--sign', identity, app)
     run('codesign', '--verify', '--deep', '--strict', '--verbose=2', app)
 
 # %% ../nbs/02_bundle.ipynb #4f455d17

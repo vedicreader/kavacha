@@ -2,6 +2,10 @@
 
 <!-- do not remove -->
 
+## 0.0.15
+
+- `sign` retries a file up to 3 times when Apple's timestamp server does not answer, so a short outage no longer fails a ship.
+
 ## 0.0.14
 
 - `ShellApi.pick_path()` shows one chooser for a file or a folder, and `open_path(path)` opens a folder as `open_folder` does and a file as a Finder open does.
