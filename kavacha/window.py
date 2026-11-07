@@ -15,7 +15,7 @@ __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZ
            'with_titlebar', 'off_main_thread', 'bring_forward', 'open_window', 'unify_nswindow', 'colorref',
            'tint_caption', 'unified_titlebar', 'run_shell', 'menus', 'open_paths', 'take_dropped', 'arm_drops',
            'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'exact_bar',
-           'menu_json', 'launcher_json', 'OpenHandler', 'RecentTarget']
+           'pc_menu_chord', 'menu_json', 'launcher_json', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -27,7 +27,7 @@ from fastcore.all import Path
 from fastcore.xdg import xdg_config_home
 
 # %% ../nbs/04_window.ipynb #b119a172
-from .menus import RESERVED, Binding, Js, MenuItem, Std
+from .menus import PC_NATIVE, RESERVED, Binding, Js, MenuItem, Std, _chord, chord_glyph, gtk_accel, pc_chord, pc_key, pc_reserved
 
 # %% ../nbs/04_window.ipynb #ffbc16b0
 APP_NAME = os.environ.get('KAVACHA_APP_NAME') or 'app'
@@ -938,9 +938,33 @@ def _bar_row(row, lookup):
     else: out, k = {'title': _title(row, lookup), 'action': row.action}, menu_chord(row.action, lookup)
     return out | (dict(key=k[0], mask=k[1]) if k else {})
 
-def menu_json(bar, lookup):
-    "`bar` as JSON-ready menus for a native launcher: rows with an action, a selector or JS, and the chord as AppKit spells it."
-    return [{'title': t, 'items': [_bar_row(r, lookup) for r in rows]} for t, rows in bar]
+def pc_menu_chord(action, lookup):
+    "The chord off a Mac for `action`: its first chord with a modifier that the desktop does not keep, from a global binding or the only scope with that chord."
+    k = lookup(action)
+    if k is None or not k.bound or (k.scope != 'global' and getattr(k, 'shared', True)): return None
+    return next((pc_chord(c) for c in k.keys if _chord(c)[0] & {'mod', 'ctrl', 'alt'} and not pc_reserved(c)), None)
+
+def _pc_row(row, lookup, native):
+    if isinstance(row, MenuItem) and not row.action: return {'sep': True}
+    if isinstance(row, Js): return {'title': row.title, 'js': row.expr}
+    if isinstance(row, Std):
+        if (c := pc_key(row)) is None: return None
+        out, safe = {'title': row.title, 'selector': row.selector}, row.selector in PC_NATIVE
+    else: out, c, safe = {'title': _title(row, lookup), 'action': row.action}, pc_menu_chord(row.action, lookup), row.action in native
+    if not c: return out
+    return out | {'chord': chord_glyph(c, mac=False)} | ({'accel': gtk_accel(c)} if safe else {})
+
+def _tidy(items):
+    "`items` without the removed rows, and without a separator at either end or next to another."
+    out = []
+    for i in items:
+        if i is not None and not (i.get('sep') and (not out or out[-1].get('sep'))): out.append(i)
+    return out[:-1] if out and out[-1].get('sep') else out
+
+def menu_json(bar, lookup, mac=None, native=()):
+    "`bar` as JSON-ready menus for a native launcher: AppKit `key` and `mask` on a Mac, else a `chord` label and a GTK `accel` on the rows safe to bind."
+    if (sys.platform == 'darwin' if mac is None else mac): return [{'title': t, 'items': [_bar_row(r, lookup) for r in rows]} for t, rows in bar]
+    return [{'title': t, 'items': _tidy([_pc_row(r, lookup, set(native)) for r in rows])} for t, rows in bar]
 
 # %% ../nbs/04_window.ipynb #7a1c0e01
 def launcher_json(lookup=lambda a: None):

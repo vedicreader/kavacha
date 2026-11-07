@@ -13,6 +13,10 @@
 - The launcher's title bar is a spec setting (`titlebar = "mac-unified"` or `native`). Unified: transparent with a hidden title over a full-size content view and an empty unified toolbar, the style in the first URL (`?titlebar=mac-unified`) and from the `titlebar` bridge call, and a mouse-down on an element with the class `pywebview-drag-region` drags the window (a double-click does what `AppleActionOnDoubleClick` says). The window title is still set.
 - Every file panel of the launcher is a sheet on the window that asked, so a tiling window manager does not move the app away.
 - `launcher_json()` gives `LAUNCHER_ROWS` as menu rows.
+- Keys off a Mac: `pc_key(row)` gives the chord a `Std` row takes on Linux or Windows. Full Screen is F11, Close Window is Ctrl+Shift+W and Quit is Ctrl+Q. Hide, Hide Others, Minimize, Zoom and Bring All to Front get `None`, so the row is not shown. Before, ⌃⌘F for Full Screen became Ctrl+F, which is Find. `pc_chord` writes any chord with `mod` as Control.
+- `LINUX_RESERVED` and `pc_reserved` list the chords a Linux desktop keeps (Regolith and GNOME): every Super chord, Alt+Tab, Alt+F2, Alt+F4, Ctrl+Alt+T, Ctrl+Alt+Delete, Ctrl+Alt+L and Ctrl+Alt+arrows.
+- `menu_json(bar, lookup, mac=False, native=())` builds the menu bar for a GTK launcher. A row carries a `chord` label, and a GTK `accel` only for Quit, Close Window, Full Screen and the actions in `native`. GTK runs window accelerators before the focused widget, so the editing keys stay labels only and Ctrl+C still reaches a terminal. `mac=None` uses the platform the code runs on. `gtk_accel` writes a chord as a GTK accelerator.
+- `chord_glyph` writes a Super chord as `Super+D` off a Mac.
 
 ## 0.0.16
 

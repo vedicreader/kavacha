@@ -8,7 +8,8 @@ from .bundle import finish, frozen_distribution, graft, is_macho, link_duplicate
 from .build import build, check, lock_requirements, read_stamp, write_stamp
 # The vocabulary a host builds its menu table in. Dataclasses over stdlib, so importing them
 # costs no pywebview and no AppKit.
-from .menus import LAUNCHER_ROWS, RESERVED, Binding, Js, MenuItem, Std, chord_glyph
+from .menus import (LAUNCHER_ROWS, LINUX_RESERVED, PC_NATIVE, RESERVED, Binding, Js, MenuItem, Std, chord_glyph, gtk_accel,
+                    pc_chord, pc_key, pc_reserved)
 # The thin app: one spec, and the server's side of the launcher. Stdlib and fastcore only.
 from .thin import Thin, childenv
 from .host import HostClient, HostError
@@ -17,4 +18,5 @@ __all__ = ['backend', 'framework_python', 'is_framework', 'running_from', 'shell
            'wait_for_http', 'App', 'doc_types', 'mypyc_modules', 'tree', 'finish',
            'frozen_distribution', 'graft', 'is_macho', 'link_duplicates', 'mend_frameworks', 'sign', 'strip_zip', 'build', 'check',
            'lock_requirements', 'read_stamp', 'write_stamp', 'Binding', 'Js', 'MenuItem', 'Std',
-           'LAUNCHER_ROWS', 'RESERVED', 'chord_glyph', 'Thin', 'childenv', 'HostClient', 'HostError']
+           'LAUNCHER_ROWS', 'RESERVED', 'chord_glyph', 'LINUX_RESERVED', 'PC_NATIVE', 'gtk_accel', 'pc_chord',
+           'pc_key', 'pc_reserved', 'Thin', 'childenv', 'HostClient', 'HostError']
