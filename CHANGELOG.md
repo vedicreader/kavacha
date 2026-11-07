@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.17
+
+- Keys off a Mac: `pc_key(row)` gives the chord a `Std` row takes on Linux or Windows. Full Screen is F11, Close Window is Ctrl+Shift+W and Quit is Ctrl+Q. Hide, Hide Others, Minimize, Zoom and Bring All to Front get `None`, so the row is not shown. Before, ⌃⌘F for Full Screen became Ctrl+F, which is Find. `pc_chord` writes any chord with `mod` as Control.
+- `LINUX_RESERVED` and `pc_reserved` list the chords a Linux desktop keeps (Regolith and GNOME): every Super chord, Alt+Tab, Alt+F2, Alt+F4, Ctrl+Alt+T, Ctrl+Alt+Delete, Ctrl+Alt+L and Ctrl+Alt+arrows.
+- `menu_json(bar, lookup, mac=False, native=())` builds the menu bar for a GTK launcher. A row carries a `chord` label, and a GTK `accel` only for Quit, Close Window, Full Screen and the actions in `native`. GTK runs window accelerators before the focused widget, so the editing keys stay labels only and Ctrl+C still reaches a terminal. `mac=None` uses the platform the code runs on. `gtk_accel` writes a chord as a GTK accelerator.
+- `chord_glyph` writes a Super chord as `Super+D` off a Mac.
+
 ## 0.0.16
 
 - `unified_titlebar(window)`, turned on by `shell_api().unified = True`: on macOS the title bar is transparent, the title is hidden and the page fills the window under the traffic lights (52 px band); on Windows the caption takes the theme's colours. The title is still set, so the Window menu and Sanketa read it. The page learns the mode from a `titlebar=<mode>` query on the first URL and from `ShellApi.titlebar()`.

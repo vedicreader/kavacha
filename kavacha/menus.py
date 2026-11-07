@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 # %% auto #0
-__all__ = ['RESERVED', 'LAUNCHER_ROWS', 'MenuItem', 'Std', 'Js', 'Binding', 'chord_glyph']
+__all__ = ['RESERVED', 'LAUNCHER_ROWS', 'LINUX_RESERVED', 'PC_NATIVE', 'MenuItem', 'Std', 'Js', 'Binding', 'chord_glyph',
+           'pc_chord', 'pc_reserved', 'pc_key', 'gtk_accel']
 
 # %% ../nbs/06_menus.ipynb #1a54959d
 @dataclass(frozen=True)
@@ -70,16 +71,55 @@ _PC = {'enter': 'Enter', 'return': 'Enter', 'backspace': 'Backspace', 'delete': 
        'pageup': 'PageUp', 'pagedown': 'PageDown', 'home': 'Home', 'end': 'End'}
 _ALIAS = {'cmd': 'mod', 'opt': 'alt'}
 
-def _glyph(chord, mac):
+def _chord(chord):
+    "One chord as `(modifiers, base)`, with aliases, Hyper and a capital letter opened up."
     *mods, base = chord.split('+') if not chord.endswith('++') else [*chord[:-2].split('+'), '+']
     ms = {_ALIAS.get(m.lower(), m.lower()) for m in mods if m}
     if 'hyper' in ms: ms = (ms - {'hyper'}) | {'mod', 'ctrl', 'alt', 'shift'}
     if len(base) == 1 and base.isupper(): ms.add('shift')
-    b = base.lower()
+    return ms, base.lower()
+
+def _glyph(chord, mac):
+    ms, b = _chord(chord)
     if mac: return ''.join(g for m, g in (('ctrl', '⌃'), ('alt', '⌥'), ('shift', '⇧'), ('mod', '⌘')) if m in ms) + _GLYPH.get(b, b.upper())
-    names = [n for m, n in (('mod', 'Ctrl'), ('ctrl', 'Ctrl'), ('alt', 'Alt'), ('shift', 'Shift')) if m in ms]
+    names = [n for m, n in (('mod', 'Ctrl'), ('ctrl', 'Ctrl'), ('alt', 'Alt'), ('shift', 'Shift'), ('super', 'Super')) if m in ms]
     return '+'.join([*dict.fromkeys(names), _PC.get(b, b.upper())])
 
 def chord_glyph(chord, mac=True):
     "How `chord` is written for a person: ⌃⌥⇧⌘ and a capital on a Mac, `Ctrl+Shift+P` elsewhere."
     return ' '.join(_glyph(c, mac) for c in str(chord or '').split())
+
+# %% ../nbs/06_menus.ipynb #pc-keys
+LINUX_RESERVED = frozenset(['alt+tab', 'alt+shift+tab', 'alt+f2', 'alt+f4', 'ctrl+alt+t', 'ctrl+alt+delete', 'ctrl+alt+l',
+                            *(f'ctrl+alt+{k}' for k in ('up', 'down', 'left', 'right'))])
+PC_NATIVE = frozenset(['terminate:', 'performClose:', 'toggleFullScreen:'])
+_PC_ROWS = {'terminate:': 'ctrl+q', 'performClose:': 'ctrl+shift+w', 'toggleFullScreen:': 'f11',
+            **dict.fromkeys(['hide:', 'hideOtherApplications:', 'performMiniaturize:', 'performZoom:', 'arrangeInFront:'])}
+
+def pc_chord(chord):
+    "One chord off a Mac, as `ctrl+alt+shift+super+base` with `mod` folded into Control."
+    ms, b = _chord(str(chord or ''))
+    if 'mod' in ms: ms = (ms - {'mod'}) | {'ctrl'}
+    return '+'.join([*(m for m in ('ctrl', 'alt', 'shift', 'super') if m in ms), b])
+
+_LINUX = {pc_chord(c) for c in LINUX_RESERVED}
+
+def pc_reserved(chord):
+    "Whether a Linux desktop keeps `chord`: every Super chord, and `LINUX_RESERVED`."
+    return 'super' in _chord(str(chord or ''))[0] or pc_chord(chord) in _LINUX
+
+def pc_key(row):
+    "The chord a `Std` row takes off a Mac: the table's for a Mac-only row, else its own; None when the row is not shown."
+    if row.selector in _PC_ROWS: return _PC_ROWS[row.selector]
+    return pc_chord(f'{row.mods}+{row.key}') if row.key else ''
+
+_GTK = {'enter': 'Return', 'return': 'Return', 'escape': 'Escape', 'esc': 'Escape', 'tab': 'Tab', 'space': 'space',
+        'backspace': 'BackSpace', 'delete': 'Delete', 'up': 'Up', 'down': 'Down', 'left': 'Left', 'right': 'Right',
+        'pageup': 'Page_Up', 'pagedown': 'Page_Down', 'home': 'Home', 'end': 'End', '`': 'grave', '-': 'minus', '=': 'equal',
+        '[': 'bracketleft', ']': 'bracketright', '\\': 'backslash', ';': 'semicolon', "'": 'apostrophe', ',': 'comma',
+        '.': 'period', '/': 'slash', '+': 'plus', **{f'f{i}': f'F{i}' for i in range(1, 13)}}
+
+def gtk_accel(chord):
+    "One chord as a GTK accelerator, such as `<Control><Shift>w`, with `mod` as Control."
+    ms, b = _chord(pc_chord(chord))
+    return ''.join(f'<{n}>' for m, n in (('ctrl', 'Control'), ('alt', 'Alt'), ('shift', 'Shift'), ('super', 'Super')) if m in ms) + _GTK.get(b, b)
