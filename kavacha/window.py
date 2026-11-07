@@ -15,7 +15,7 @@ __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZ
            'with_titlebar', 'off_main_thread', 'bring_forward', 'open_window', 'unify_nswindow', 'colorref',
            'tint_caption', 'unified_titlebar', 'run_shell', 'menus', 'open_paths', 'take_dropped', 'arm_drops',
            'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'exact_bar',
-           'menu_json', 'OpenHandler', 'RecentTarget']
+           'menu_json', 'launcher_json', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -941,3 +941,9 @@ def _bar_row(row, lookup):
 def menu_json(bar, lookup):
     "`bar` as JSON-ready menus for a native launcher: rows with an action, a selector or JS, and the chord as AppKit spells it."
     return [{'title': t, 'items': [_bar_row(r, lookup) for r in rows]} for t, rows in bar]
+
+# %% ../nbs/04_window.ipynb #7a1c0e01
+def launcher_json(lookup=lambda a: None):
+    "`LAUNCHER_ROWS` as menu rows: the chords a native launcher owns (Quit, Hide, Close Window, Undo, ...)."
+    from kavacha.menus import LAUNCHER_ROWS
+    return menu_json([('', LAUNCHER_ROWS)], lookup)[0]['items']

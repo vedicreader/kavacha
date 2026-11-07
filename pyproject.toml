@@ -7,7 +7,7 @@ name = "kavacha"
 dynamic = ["version"]
 description = "run and package web apps as native desktop applications"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
 authors = [{name = "Karthik Rajgopal", email = "karthik.rajgopal@hotmail.com"}]
 keywords = ['py2app', 'py2exe', 'pywebview', 'desktop', 'packaging']
@@ -29,6 +29,9 @@ windows = ["kavacha[window,icons]", "py2exe>=0.14.2; sys_platform == 'win32'"]
 [project.urls]
 Repository = "https://github.com/vedicreader/kavacha"
 Documentation = "https://vedicreader.github.io/kavacha"
+
+[project.scripts]
+kavacha = "kavacha.thin:cli"
 
 [project.entry-points.nbdev]
 kavacha = "kavacha._modidx:d"
