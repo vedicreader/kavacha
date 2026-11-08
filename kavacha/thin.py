@@ -91,6 +91,7 @@ class Thin:
     menu_action_js: str = 'leeAct({action})'
     window: dict = field(default_factory=dict)   # {size, min_size, home, title_prefix}
     titlebar: str = 'native'          # `mac-unified`: a transparent, unified title bar the page draws into; `native` elsewhere
+    title_text: bool = True           # False: a native macOS title bar draws no title text; the window title stays set
     doc_types: list = field(default_factory=list)
     imported_types: list = field(default_factory=list)
     url_schemes: list = field(default_factory=list)
@@ -146,7 +147,7 @@ def _config(self):
                 channel=f'https://github.com/{self.repo}/releases/download' if self.repo else '', extras=list(self.extras),
                 bridge=dict(handler=self.name.lower(), flag=f'__{self.name.lower()}', methods=list(self.bridge), js_global=self.bridge_global),
                 sites=dict(self.sites), routes=dict(self.routes), capabilities=list(self.capabilities), menus=self.menus, menu_action_js=self.menu_action_js,
-                window=dict(self.window), titlebar=dict(style=self.titlebar, query='titlebar', drag_class='pywebview-drag-region'), cask=self.cask, debug_env=f'{self.env_prefix}WEBVIEW_DEBUG')
+                window=dict(self.window), titlebar=dict(style=self.titlebar, title_text=self.title_text, query='titlebar', drag_class='pywebview-drag-region'), cask=self.cask, debug_env=f'{self.env_prefix}WEBVIEW_DEBUG')
 Thin.config = _config
 
 # %% ../nbs/07_thin.ipynb #a2c33d6a
