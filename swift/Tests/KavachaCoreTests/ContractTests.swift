@@ -31,6 +31,14 @@ func fixture(_ name: String) -> Any { try! JSONSerialization.jsonObject(with: Da
         }
     }
 
+    @Test func aKavachaJsonWithNoTitleTextDrawsTheTitle() throws {
+        var o = fixture("leela/kavacha.json") as! [String: Any], t = o["titlebar"] as! [String: Any]
+        t.removeValue(forKey: "title_text"); o["titlebar"] = t
+        let f = tempDir().appending(path: "kavacha.json"); try JSONSerialization.data(withJSONObject: o).write(to: f)
+        #expect(try LauncherConfig.load(f).titlebar.title_text, "an older kavacha.json still loads")
+        #expect(LauncherConfig.named("App").titlebar.title_text)
+    }
+
     @Test func theBridgeCases() {
         for c in fixture("bridge_cases.json") as! [[String: Any]] {
             let a = c["action"] as! [String: Any], got = Bridge.route(c["body"]!)
@@ -148,6 +156,7 @@ func fixture(_ name: String) -> Any { try! JSONSerialization.jsonObject(with: Da
 
     @Test func theWindowNamesAreLeelas() {
         #expect(leela.window.home == "leela:home" && leela.window.title_prefix == "leela — " && leela.window.size == [1440, 900] && leela.window.min_size == [900, 560])
-        #expect(leela.menu_action_js == "leeAct({action})" && leela.debug_env == "LEELA_WEBVIEW_DEBUG" && leela.sites["list"] == "/app/sites" && leela.titlebar.unified)
+        #expect(leela.menu_action_js == "leeAct({action})" && leela.debug_env == "LEELA_WEBVIEW_DEBUG" && leela.sites["list"] == "/app/sites")
+        #expect(!leela.titlebar.unified && !leela.titlebar.title_text, "the native bar with no title text: the page header shows the name")
     }
 }

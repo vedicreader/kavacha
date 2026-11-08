@@ -66,6 +66,18 @@ import WebKit
         w2.close()
     }
 
+    @Test func aNativeTitlebarWithNoTitleTextHidesOnlyTheText() {
+        let ws = Windows(); ws.titlebar.title_text = false
+        let (w, v) = ws.make(u("http://127.0.0.1:1/"), title: "leela — x")
+        #expect(w.titleVisibility == .hidden && w.title == "leela — x", "the Window menu and accessibility still read the title")
+        #expect(!w.styleMask.contains(.fullSizeContentView) && !w.titlebarAppearsTransparent && w.toolbar == nil, "the bar stays native")
+        #expect(!v.configuration.userContentController.userScripts.contains { $0.source.contains("drag_region") })
+        w.close()
+        let (w2, _) = Windows().make(u("http://127.0.0.1:1/"), title: "t")
+        #expect(w2.titleVisibility == .visible, "the default draws the title")
+        w2.close()
+    }
+
     @Test func aDoubleClickOnTheDragRegionDoesWhatSystemSettingsSays() {
         let d = UserDefaults(suiteName: "kavacha-test-\(UUID().uuidString)")!
         #expect(KavachaWebView.doubleClickAction(d) == "Maximize")

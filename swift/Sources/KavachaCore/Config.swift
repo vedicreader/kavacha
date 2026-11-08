@@ -19,7 +19,18 @@ public struct LauncherConfig: Codable, Sendable, Equatable {
         public var style: String
         public var query: String
         public var drag_class: String
+        /// false: a native title bar draws no title text; the window title stays set
+        public var title_text: Bool
         public var unified: Bool { style == "mac-unified" }
+        public init(style: String, title_text: Bool = true, query: String, drag_class: String) {
+            self.style = style; self.title_text = title_text; self.query = query; self.drag_class = drag_class
+        }
+        /// a kavacha.json from before `title_text` draws the title
+        public init(from d: Decoder) throws {
+            let c = try d.container(keyedBy: CodingKeys.self)
+            try self.init(style: c.decode(String.self, forKey: .style), title_text: c.decodeIfPresent(Bool.self, forKey: .title_text) ?? true,
+                          query: c.decode(String.self, forKey: .query), drag_class: c.decode(String.self, forKey: .drag_class))
+        }
     }
     public var api: Int
     public var name: String
@@ -62,7 +73,7 @@ public struct LauncherConfig: Codable, Sendable, Equatable {
                               bridge: BridgeNames(handler: low, flag: "__\(low)", methods: ["open_folder", "pick_folder", "pick_path", "open_path", "recent", "set_background", "set_title", "titlebar"], js_global: "pywebview"),
                               sites: [:], routes: ["open": "/hub/open", "grant": "/hub/grant", "recent": "/app/recent"], capabilities: ["confirm", "grant", "update", "extras"],
                               menus: "/app/menu.json", menu_action_js: "leeAct({action})", window: WindowSpec(size: [1440, 900], min_size: [900, 560], home: "\(low):home", title_prefix: "\(low) — "),
-                              titlebar: Titlebar(style: "native", query: "titlebar", drag_class: "pywebview-drag-region"), cask: low, debug_env: name.uppercased() + "_WEBVIEW_DEBUG")
+                              titlebar: Titlebar(style: "native", title_text: true, query: "titlebar", drag_class: "pywebview-drag-region"), cask: low, debug_env: name.uppercased() + "_WEBVIEW_DEBUG")
     }
 
     public func route(_ k: String) -> String { routes[k] ?? "" }

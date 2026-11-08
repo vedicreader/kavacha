@@ -109,6 +109,8 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         v.underPageBackgroundColor = background
         let w = NSWindow(contentRect: NSRect(origin: .zero, size: Self.size), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         if titlebar.unified { Self.unify(w); c.userContentController.addUserScript(WKUserScript(source: Bridge.dragScript(), injectionTime: .atDocumentEnd, forMainFrameOnly: true)) }
+        // a native bar with no title text keeps its traffic lights and its height; only the text goes
+        else if !titlebar.title_text { w.titleVisibility = .hidden }
         // the title is set either way: the Window menu and other apps read it
         w.title = title; w.contentView = v; w.initialFirstResponder = v; w.makeFirstResponder(v)
         w.minSize = Self.minSize; w.collectionBehavior.insert(.fullScreenPrimary)

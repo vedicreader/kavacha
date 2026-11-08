@@ -29,7 +29,7 @@ The app describes itself once, in `packaging/kavacha.toml` or `[tool.kavacha.thi
 | `capabilities` | the control routes the launcher answers |
 | `menus`, `menu_action_js` | the menu bar route, and the JavaScript an action row runs (`{action}` is filled in) |
 | `window` | `{size, min_size, home, title_prefix}` |
-| `titlebar` | `{style, query, drag_class}`: the window's title bar; see below |
+| `titlebar` | `{style, title_text, query, drag_class}`: the window's title bar; see below |
 | `cask`, `debug_env` | the Homebrew cask, and the variable that turns on the web inspector |
 
 ## What is in the bundle
@@ -142,6 +142,8 @@ The launcher injects `window.<js_global>.api` into each page of the server, with
 
 - `mac-unified` (macOS): the title bar is transparent, the title is hidden, the content view is full size, and an empty unified toolbar makes the bar 52 pt with the traffic lights in its centre. The launcher still sets the window title from `set_title`, so the Window menu and other apps can read it. The first URL of a window gets `?<query>=mac-unified`, and the `titlebar` bridge call answers the same. The page reserves 94 px on the left for the traffic lights and drops it in full screen. A mouse-down on an element whose own class is `drag_class` drags the window; a double-click on it zooms or minimizes, as the system setting `AppleActionOnDoubleClick` says.
 - `native` (Linux, WSL, and any launcher that cannot draw into its title bar): the launcher keeps the native title bar, sends `?<query>=native`, and the page reserves no gap.
+
+`titlebar.title_text` is true or false; when it is not there, it is true. When it is false and the style is `native`, a macOS launcher hides the title text and changes nothing else: the bar is not transparent, the content view is not full size, and there is no toolbar. The traffic lights stay. The launcher still sets the window title from `set_title`, so the Window menu and accessibility tools can read it. Use it when the page header already shows the app name.
 
 ## The manifest
 

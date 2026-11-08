@@ -53,7 +53,8 @@
  "titlebar": {
   "drag_class": "pywebview-drag-region",
   "query": "titlebar",
-  "style": "mac-unified"
+  "style": "native",
+  "title_text": false
  },
  "window": {
   "home": "leela:home",
