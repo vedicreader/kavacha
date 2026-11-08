@@ -13,9 +13,9 @@ __all__ = ['APP_NAME', 'ENV_PREFIX', 'CFG', 'BACKENDS', 'DEFAULT_SIZE', 'MIN_SIZ
            'dock_menu', 'dock_delegates', 'quit_cleanly', 'quit_on_sigterm', 'quiet_text_substitution',
            'keep_running_in_dock', 'shell_api', 'system_dark', 'window_background', 'make_window', 'titlebar_mode',
            'with_titlebar', 'off_main_thread', 'bring_forward', 'open_window', 'unify_nswindow', 'colorref',
-           'tint_caption', 'unified_titlebar', 'run_shell', 'menus', 'open_paths', 'take_dropped', 'arm_drops',
-           'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch', 'exact_bar',
-           'pc_menu_chord', 'menu_json', 'launcher_json', 'OpenHandler', 'RecentTarget']
+           'tint_caption', 'hide_title_text', 'unified_titlebar', 'run_shell', 'menus', 'open_paths', 'take_dropped',
+           'arm_drops', 'watch_open_events', 'mac_key', 'menu_chord', 'menu_bar', 'eval_js', 'install_menu_patch',
+           'exact_bar', 'pc_menu_chord', 'menu_json', 'launcher_json', 'OpenHandler', 'RecentTarget']
 
 # %% ../nbs/04_window.ipynb #0c685d46
 import os, re, sys, threading, time
@@ -128,6 +128,8 @@ class ShellApi:
         "Whatever the host offers as recent folders, or nothing."
         return list(self.on_recent()) if self.on_recent else []
     unified = False
+    #: False draws no title text in a native macOS title bar; the title is still set, so the Window menu and accessibility read it
+    title_text = True
     def titlebar(self):
         "How this app's windows show their title bar, as `titlebar_mode` names it: `native` unless the host set `unified`."
         return titlebar_mode() if self.unified else 'native'
@@ -498,6 +500,7 @@ def make_window(title=None, size=None, background=None):
         # Only the drag region itself moves the window, so a press on a button in it stays a click.
         webview.settings['DRAG_REGION_DIRECT_TARGET_ONLY'] = True
         window.events.before_show += lambda: unified_titlebar(window, bg)
+    elif not shell_api().title_text and sys.platform == 'darwin': window.events.before_show += lambda: hide_title_text(window)
     return window
 
 
@@ -598,6 +601,14 @@ def _native(window, platform):
     elif platform == 'win32': from webview.platforms.winforms import BrowserView
     else: return None
     return BrowserView.instances.get(window.uid)
+
+def hide_title_text(window, native=None):
+    "Draw no title text in macOS `window`'s native title bar; the title stays set. Whether it took. Call on the GUI thread."
+    try:
+        if (v := native or _native(window, 'darwin')) is None: return False
+        v.window.setTitleVisibility_(TITLE_HIDDEN); return True
+    except Exception as e:
+        print(f'  hidden title: {errstr(e)}'); return False
 
 def unified_titlebar(window, background=None, platform=None, native=None):
     "Merge pywebview `window`'s title bar with the page's top row as this platform does it natively; the mode it gave. Call on the GUI thread."
