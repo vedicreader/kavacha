@@ -585,16 +585,18 @@ def _lock_test(self, d=None, fresh=False, extras=False, record_dir=None, keep=Fa
 Lock.test_code_hash, Lock.lock_test = _test_code_hash, _lock_test
 
 # %% ../nbs/09_lock.ipynb #b3e92597
-def fetch(url, dst=None, fresh=False, tries=1, wait=5):
-    "The bytes at `url`, also written to `dst`. `fresh` gets past GitHub's cache of a replaced asset; `tries` waits out a new release's 404."
+def fetch(url, dst=None, fresh=False, tries=5, wait=5, new=False):
+    "The bytes at `url`, also written to `dst`. `fresh` gets past GitHub's cache of a replaced asset. A 5xx or a dropped connection is tried again `tries` times, `wait` s apart; with `new`, a 404 is too, for a release GitHub has not started to serve."
     if fresh: url += ('&' if '?' in url else '?') + f't={uuid.uuid4().hex}'
     for i in range(tries):
         try:
             with urllib.request.urlopen(url, timeout=30) as r: b = r.read()
             break
         except urllib.error.HTTPError as e:
-            if e.code != 404 or i == tries - 1: raise
-            time.sleep(wait)
+            if not (e.code >= 500 or (new and e.code == 404)) or i == tries - 1: raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if i == tries - 1: raise
+        time.sleep(wait)
     if dst: Path(dst).write_bytes(b)
     return b
 
@@ -619,7 +621,7 @@ def _channel(self, name='channel', keys_pub=None):
 
 def _fetch_lock(self, n, into):
     into = Path(into); into.mkdir(parents=True, exist_ok=True)
-    for f in ('manifest.json', 'manifest.sig', *FILES): fetch(f'{self.dl}/lock-{n}/{asset_name(f)}', into/f, tries=12)
+    for f in ('manifest.json', 'manifest.sig', *FILES): fetch(f'{self.dl}/lock-{n}/{asset_name(f)}', into/f, tries=12, new=True)
     return into
 Lock.gh, Lock.channel, Lock.fetch_lock = _gh, _channel, _fetch_lock
 
@@ -656,7 +658,11 @@ def _refusals(self, d=None, published=None, allow_downgrade=False, at=None, keys
         V = lambda v: tuple(int(x) for x in re.findall(r'\d+', v))
         if V(self.app_version(d)) < V(published[pk]): why.append(f"{pk} {self.app_version(d)} is lower than the published {published[pk]}; allow a downgrade to roll back")
     return why
-Lock.record_for, Lock.tree_clean, Lock.refusals = _record_for, _tree_clean, _refusals
+def _stale(self, d=None):
+    "Why the lock in `d` has no usable test record (none, old, or the test code changed since), or ''."
+    d = Path(d or self.lock)
+    return self.record_for(lock_hash(d, self.pinned_version()), d)[1]
+Lock.record_for, Lock.tree_clean, Lock.refusals, Lock.stale = _record_for, _tree_clean, _refusals, _stale
 
 # %% ../nbs/09_lock.ipynb #feeafe06
 def _publish(self, d=None, keys_pub=None, allow_downgrade=False):
@@ -782,12 +788,12 @@ Lock.verify_app = _verify_app
 
 # %% ../nbs/09_lock.ipynb #fd36c96f
 def main(argv=None):
-    "kavacha lock make|hash|check|test|diff|publish|promote|verify|key|dev-lock|fetch|wheel|fixtures|verify-app"
+    "kavacha lock make|hash|check|stale|test|diff|publish|promote|verify|key|dev-lock|fetch|wheel|fixtures|verify-app"
     a = argparse.ArgumentParser(prog='kavacha lock', description='The signed environment lock of a thin app.')
     a.add_argument('--root', default='.')
     s = a.add_subparsers(dest='cmd', required=True)
     p = s.add_parser('make'); p.add_argument('version'); p.add_argument('--dir'); p.add_argument('--wheel'); p.add_argument('--pin', action='append', default=[])
-    for n in ('hash', 'check'): s.add_parser(n).add_argument('--dir')
+    for n in ('hash', 'check', 'stale'): s.add_parser(n).add_argument('--dir')
     p = s.add_parser('test'); p.add_argument('--dir'); p.add_argument('--fresh', action='store_true'); p.add_argument('--extras', action='store_true'); p.add_argument('--records'); p.add_argument('--keep', action='store_true')
     p = s.add_parser('diff'); p.add_argument('--dir'); p.add_argument('--against')
     s.add_parser('publish').add_argument('--allow-downgrade', action='store_true')
@@ -806,6 +812,9 @@ def main(argv=None):
     match o.cmd:
         case 'make': lk.make(o.version, o.dir, o.wheel, pins=o.pin)
         case 'hash': print(lock_hash(o.dir or lk.lock, lk.pinned_version()))
+        case 'stale':
+            if why := lk.stale(o.dir): raise SystemExit(why)
+            print('the lock has a usable test record')
         case 'check':
             if why := lk.check(o.dir or lk.lock): raise SystemExit('\n'.join(why))
             print('lock ok')

@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.21
+
+- `kavacha lock` tries a GitHub 5xx and a dropped connection again, 5 times 5 seconds apart. GitHub answered 504 for minutes, and `verify` and `publish` stopped on the first one. A 404 is still an answer, except for the lock a brand-new release has not started to serve (`fetch(new=True)`).
+- `kavacha lock stale` says why the lock's test record cannot be used (none, old, uv or the test code changed since), and prints "usable" when it can. A release script uses it to run the lock test again only when it must.
+
 ## 0.0.20
 
 - `kavacha ship mac --release` reads Apple's verdict. `notarytool submit --wait` can exit 0 for a rejected submission, and stapling then failed with "Error 73" and no cause. It now asks for JSON, requires `Accepted`, and otherwise stops with the submission id and Apple's own log.

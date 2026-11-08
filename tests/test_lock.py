@@ -205,7 +205,33 @@ def test_fetch_goes_past_the_cache_and_waits_out_a_new_releases_404(tmp_path, mo
         if fails[0]: fails[0] -= 1; raise urllib.error.HTTPError(url, 404, 'not yet', {}, None)
         return io.BytesIO(b'{"n": 2}')
     monkeypatch.setattr(K.urllib.request, 'urlopen', opener); monkeypatch.setattr(K.time, 'sleep', lambda s: None)
-    assert K.fetch('https://x/lock-channel/c.json', tmp_path/'c', fresh=True, tries=3) == b'{"n": 2}' and len(urls) == 3
+    assert K.fetch('https://x/lock-channel/c.json', tmp_path/'c', fresh=True, tries=3, new=True) == b'{"n": 2}' and len(urls) == 3
     assert all('?t=' in u for u in urls) and (tmp_path/'c').read_bytes() == b'{"n": 2}'
     fails[0] = 1
-    with pytest.raises(urllib.error.HTTPError): K.fetch('https://x/a', tries=1)
+    with pytest.raises(urllib.error.HTTPError): K.fetch('https://x/a', tries=3)   # a 404 is an answer, unless the release is new
+    assert len(urls) == 4, 'one more try, not three'
+
+def test_fetch_tries_again_on_a_server_error_and_a_dropped_connection(tmp_path, monkeypatch):
+    "GitHub answered 504 for minutes on 8 Nov 2026, and `lock verify` stopped on the first one."
+    import io, urllib.error
+    seen, queue = [], [urllib.error.HTTPError('u', 504, 'Gateway Time-out', {}, None), urllib.error.URLError('connection reset'), TimeoutError()]
+    def opener(url, timeout=30):
+        seen.append(url)
+        if queue: raise queue.pop(0)
+        return io.BytesIO(b'ok')
+    monkeypatch.setattr(K.urllib.request, 'urlopen', opener); monkeypatch.setattr(K.time, 'sleep', lambda s: None)
+    assert K.fetch('https://x/a') == b'ok' and len(seen) == 4
+    queue[:] = [urllib.error.HTTPError('u', 503, 'down', {}, None)] * 9
+    with pytest.raises(urllib.error.HTTPError, match='503'): K.fetch('https://x/a', tries=3)
+    queue[:] = [urllib.error.HTTPError('u', 403, 'forbidden', {}, None)]; seen.clear()
+    with pytest.raises(urllib.error.HTTPError, match='403'): K.fetch('https://x/a')
+    assert len(seen) == 1, 'a 403 is not retried'
+
+def test_stale_says_why_the_test_record_cannot_be_used_and_is_empty_when_it_can(L, tmp_path):
+    "`make ship` skips the lock test only for a lock whose record is usable; after a kavacha change the old record is stale."
+    d = tmp_path/'lock'; _lock(d)
+    assert L.stale(d).startswith('no test record')
+    h = K.lock_hash(d, L.pinned_version()); _record(L, d, h)
+    assert L.stale(d) == ''
+    _record(L, d, h, test_code='old')
+    assert 'changed since the test' in L.stale(d)
