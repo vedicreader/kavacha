@@ -165,11 +165,13 @@ def test_a_pointer_names_its_channel_and_an_old_expires_field_is_ignored(L, tmp_
     p = K.pointer(4, 'ab', 'channel-test')
     assert p['channel'] == 'channel-test' and 'expires' not in p
     monkeypatch.setattr(L, 'verify_sig', lambda *a: True)
-    serve = lambda body: monkeypatch.setattr(K, 'fetch', lambda url, dst=None: Path(dst).write_text(json.dumps(body)) if dst else None)
+    asked = []
+    serve = lambda body: monkeypatch.setattr(K, 'fetch', lambda url, dst=None, **kw: (asked.append(kw), Path(dst).write_text(json.dumps(body)) if dst else None)[1])
     serve(p)
     with pytest.raises(SystemExit, match='pointer for channel-test'): L.channel('channel', tmp_path/'k')
     serve(p | {'expires': '2020-01-01T00:00:00Z'})
     assert L.channel('channel-test', tmp_path/'k')['n'] == 4
+    assert asked and all(kw.get('fresh') for kw in asked), 'a pointer is replaced in place, so it is always read past the cache'
 
 def test_the_lock_tests_refuse_the_app_the_person_runs(L, tmp_path, monkeypatch):
     (cfg := tmp_path/'.config'/'leela').mkdir(parents=True)
@@ -193,3 +195,17 @@ def test_verify_app_refuses_a_bundle_that_is_not_this_spec(L, tmp_path):
     with pytest.raises(SystemExit) as e: L.verify_app(tmp_path/'Leela.app')
     msg = str(e.value)
     assert "'org.vedicreader.leela'" in msg and 'no launcher' in msg and 'no kavacha.json' in msg and 'no Helpers/uv' in msg
+
+def test_fetch_goes_past_the_cache_and_waits_out_a_new_releases_404(tmp_path, monkeypatch):
+    "GitHub served a replaced channel pointer from its cache for minutes, so lock publish saw the old lock and stopped."
+    import io, urllib.error
+    urls, fails = [], [2]
+    def opener(url, timeout=30):
+        urls.append(url)
+        if fails[0]: fails[0] -= 1; raise urllib.error.HTTPError(url, 404, 'not yet', {}, None)
+        return io.BytesIO(b'{"n": 2}')
+    monkeypatch.setattr(K.urllib.request, 'urlopen', opener); monkeypatch.setattr(K.time, 'sleep', lambda s: None)
+    assert K.fetch('https://x/lock-channel/c.json', tmp_path/'c', fresh=True, tries=3) == b'{"n": 2}' and len(urls) == 3
+    assert all('?t=' in u for u in urls) and (tmp_path/'c').read_bytes() == b'{"n": 2}'
+    fails[0] = 1
+    with pytest.raises(urllib.error.HTTPError): K.fetch('https://x/a', tries=1)

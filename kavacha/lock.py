@@ -2,7 +2,7 @@
 
 # %% ../nbs/09_lock.ipynb #95115ed7
 from __future__ import annotations
-import argparse, hashlib, importlib.util, json, os, re, shutil, socket, subprocess, sys, tempfile, threading, time, tomllib, urllib.error, urllib.parse, urllib.request
+import argparse, hashlib, importlib.util, json, os, re, shutil, socket, subprocess, sys, tempfile, threading, time, tomllib, urllib.error, urllib.parse, urllib.request, uuid
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from fastcore.all import Path
@@ -585,9 +585,16 @@ def _lock_test(self, d=None, fresh=False, extras=False, record_dir=None, keep=Fa
 Lock.test_code_hash, Lock.lock_test = _test_code_hash, _lock_test
 
 # %% ../nbs/09_lock.ipynb #b3e92597
-def fetch(url, dst=None):
-    "The bytes at `url`, also written to `dst`."
-    with urllib.request.urlopen(url, timeout=30) as r: b = r.read()
+def fetch(url, dst=None, fresh=False, tries=1, wait=5):
+    "The bytes at `url`, also written to `dst`. `fresh` gets past GitHub's cache of a replaced asset; `tries` waits out a new release's 404."
+    if fresh: url += ('&' if '?' in url else '?') + f't={uuid.uuid4().hex}'
+    for i in range(tries):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as r: b = r.read()
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 404 or i == tries - 1: raise
+            time.sleep(wait)
     if dst: Path(dst).write_bytes(b)
     return b
 
@@ -600,7 +607,8 @@ def _gh(self, *a, check=True): return sh('gh', *a, '-R', self.repo, check=check,
 def _channel(self, name='channel', keys_pub=None):
     "The channel pointer `name`, checked; {} when none is published."
     tmp = Path(tempfile.mkdtemp())
-    try: fetch(f'{self.dl}/lock-channel/{name}.json', tmp/'c.json'); fetch(f'{self.dl}/lock-channel/{name}.sig', tmp/'c.sig')
+    # a pointer is replaced in place, and GitHub serves the old one for minutes unless the address is new
+    try: fetch(f'{self.dl}/lock-channel/{name}.json', tmp/'c.json', fresh=True); fetch(f'{self.dl}/lock-channel/{name}.sig', tmp/'c.sig', fresh=True)
     except urllib.error.HTTPError as e:
         if e.code == 404: return {}
         raise
@@ -611,7 +619,7 @@ def _channel(self, name='channel', keys_pub=None):
 
 def _fetch_lock(self, n, into):
     into = Path(into); into.mkdir(parents=True, exist_ok=True)
-    for f in ('manifest.json', 'manifest.sig', *FILES): fetch(f'{self.dl}/lock-{n}/{asset_name(f)}', into/f)
+    for f in ('manifest.json', 'manifest.sig', *FILES): fetch(f'{self.dl}/lock-{n}/{asset_name(f)}', into/f, tries=12)
     return into
 Lock.gh, Lock.channel, Lock.fetch_lock = _gh, _channel, _fetch_lock
 

@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.19
+
+- `kavacha lock` reads a channel pointer past GitHub's cache: a replaced `channel-test.json` was served old for minutes, so `publish` saw the previous lock and stopped, though the new one was published. `fetch(fresh=True)` adds a unique query.
+- `fetch(tries=n)` waits out the 404 a brand-new release gives for a few seconds; `publish` reads the new lock back with it.
+
 ## 0.0.18
 
 - A native macOS title bar can show no title text. The traffic lights and the bar stay native; only the text goes. The window title is still set, so the Window menu and Sanketa read it. Use it when the page header already shows the app name.
