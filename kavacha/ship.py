@@ -2,14 +2,14 @@
 
 # %% ../nbs/10_ship.ipynb #96a7e692
 from __future__ import annotations
-import argparse, hashlib, json, os, re, shutil, subprocess, tarfile, tempfile, urllib.request
+import argparse, hashlib, json, os, re, shutil, subprocess, tarfile, tempfile, time, urllib.request
 from fastcore.all import Path
 from .thin import Thin
 from .lock import Lock, sh, sha256
 
 # %% auto #0
 __all__ = ['UV_URL', 'KAVACHA_DL', 'CASK', 'fetch_uv', 'launcher', 'bundle', 'entitlements', 'sign_app', 'zip_app', 'cask',
-           'build_mac', 'ship_mac', 'main']
+           'build_mac', 'notarize', 'staple', 'ship_mac', 'main']
 
 # %% ../nbs/10_ship.ipynb #d94ed3b8
 UV_URL = 'https://github.com/astral-sh/uv/releases/download/{v}/uv-aarch64-apple-darwin.tar.gz'
@@ -129,6 +129,25 @@ def _notary(profile=None, key=None, key_id=None, issuer=None):
     if not (key and key_id and issuer): raise SystemExit('no notary credentials: give --profile, or --key, --key-id and --issuer')
     return ['--key', key, '--key-id', key_id, '--issuer', issuer]
 
+def notarize(nz, notary):
+    "Submit `nz`, wait for Apple's verdict, and stop with Apple's own log unless it is Accepted; the submission id. `notarytool --wait` can exit 0 on a rejection, so the status is read, not the exit code."
+    p = subprocess.run(['xcrun', 'notarytool', 'submit', str(nz), *notary, '--wait', '--output-format', 'json'], text=True, capture_output=True)
+    try: r = json.loads(p.stdout)
+    except ValueError: raise SystemExit(f'notarytool gave no verdict: {(p.stderr or p.stdout).strip()[-2000:]}')
+    if r.get('status') != 'Accepted':
+        log = subprocess.run(['xcrun', 'notarytool', 'log', str(r.get('id', '')), *notary], text=True, capture_output=True).stdout
+        raise SystemExit(f"Apple did not accept submission {r.get('id')}: {r.get('status')}\n{log.strip()[-2000:]}")
+    print(f"notarized: submission {r['id']} is Accepted")
+    return r['id']
+
+def staple(app, tries=6, wait=20):
+    "Staple Apple's ticket to `app` and check it. Apple's ticket service can lag the verdict by a minute, so a failure is tried again before it stops the release."
+    for i in range(tries):
+        try: sh('xcrun', 'stapler', 'staple', app); sh('xcrun', 'stapler', 'validate', app); return
+        except SystemExit as e:
+            if i == tries - 1: raise
+            print(f'stapling failed ({i + 1} of {tries}); trying again in {wait} s: {str(e)[-300:]}'); time.sleep(wait)
+
 def ship_mac(lk, version, identity, profile=None, key=None, key_id=None, issuer=None, exe=None, tap=None):
     "Release app `version`: build with the stable channel's lock, sign, notarize, staple, zip, upload, write the cask."
     t = lk.t
@@ -136,13 +155,14 @@ def ship_mac(lk, version, identity, profile=None, key=None, key_id=None, issuer=
     if not lk.keys_pub.is_file(): raise SystemExit(f'no {lk.keys_pub}; run kavacha lock key and commit the public keys')
     if sh('git', '-C', lk.root, 'status', '--porcelain'): raise SystemExit('the git tree has changes that are not committed')
     if not identity.startswith('Developer ID Application'): raise SystemExit('a release is signed with a Developer ID Application identity')
+    lk.gh('release', 'list', '--limit', '1')   # a broken gh login stops the release here, not after minutes of notarizing
     out = lk.root/t.build_dir
     shutil.rmtree(out/'lock', ignore_errors=True)
     lock = lk.fetch_channel(out/'lock')
     app = build_mac(lk, version, lock=lock, keys=lk.keys_pub, exe=exe, identity=identity, out=out)
     nz = zip_app(app, out/f'{t.name}.notary.zip')
-    sh('xcrun', 'notarytool', 'submit', nz, *_notary(profile, key, key_id, issuer), '--wait')
-    sh('xcrun', 'stapler', 'staple', app); sh('xcrun', 'stapler', 'validate', app)
+    notarize(nz, _notary(profile, key, key_id, issuer))
+    staple(app)
     z = zip_app(app, out/f'{t.name}.zip'); nz.unlink()
     tag = f'app-v{version}'
     if lk.gh('release', 'view', tag, check=False): lk.gh('release', 'upload', tag, z, '--clobber')

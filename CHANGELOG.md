@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.20
+
+- `kavacha ship mac --release` reads Apple's verdict. `notarytool submit --wait` can exit 0 for a rejected submission, and stapling then failed with "Error 73" and no cause. It now asks for JSON, requires `Accepted`, and otherwise stops with the submission id and Apple's own log.
+- Stapling is tried again, 6 times 20 seconds apart, because Apple's ticket service can lag the verdict. The last failure's message is shown.
+- A broken `gh` login stops the release before the build and the minutes of notarizing, not after them.
+
 ## 0.0.19
 
 - `kavacha lock` reads a channel pointer past GitHub's cache: a replaced `channel-test.json` was served old for minutes, so `publish` saw the previous lock and stopped, though the new one was published. `fetch(fresh=True)` adds a unique query.
