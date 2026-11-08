@@ -2,6 +2,12 @@
 
 <!-- do not remove -->
 
+## 0.0.18
+
+- A native macOS title bar can show no title text. The traffic lights and the bar stay native; only the text goes. The window title is still set, so the Window menu and Sanketa read it. Use it when the page header already shows the app name.
+  - pywebview window: set `shell_api().title_text = False`. `make_window` then calls `hide_title_text(window)` before the window shows.
+  - Thin app: set `title_text = false` in the spec. `Thin.config()` writes it into the `titlebar` of `kavacha.json`, and the launcher sets `titleVisibility = .hidden` on a native window. A `kavacha.json` without `title_text` still loads and draws the title. This needs launcher `launcher-v2`.
+
 ## 0.0.17
 
 - Thin apps. A thin app is kavacha's native launcher and the app's Python server, whose packages come from a signed environment lock with its own channel. `contract/api-1.md` is the contract, and `contract/fixtures/` holds the cases the Python and Swift sides both check.
