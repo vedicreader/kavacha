@@ -34,6 +34,13 @@ def test_the_plist_has_what_the_launcher_and_finder_need(tmp_path):
     assert (p['CFBundleExecutable'], p['CFBundleIdentifier'], p['CFBundleIconFile'], p['LSMinimumSystemVersion'], p['NSHumanReadableCopyright']) == ('Leela', 'org.vedicreader.leela', 'AppIcon', '14.0', 'Apache-2.0')
     assert p['NSAppTransportSecurity'] == {'NSAllowsLocalNetworking': True}
 
+def test_the_microphone_is_granted_only_when_the_spec_has_its_usage_text(tmp_path):
+    "A page may record only in an app whose Info.plist says why; without the text macOS would refuse it anyway."
+    assert Thin('Demo').config()['microphone'] is False
+    assert Thin('Demo', usage={'NSCameraUsageDescription': 'x'}).config()['microphone'] is False
+    assert Thin('Demo', usage={'NSMicrophoneUsageDescription': 'to listen'}).config()['microphone'] is True
+    assert leela(tmp_path).config()['microphone'] is False
+
 def test_the_host_names_are_leelas():
     assert owned('LEELA_') == ('LEELA_HOST_URL', 'LEELA_HOST_TOKEN', 'LEELA_APP_VERSION', 'LEELA_APP_BUNDLE', 'LEELA_LOCK_N', 'LEELA_ENV_HASH', 'LEELA_UV')
     assert HostClient('LEELA_', 'Leela').steered('PYTHONPATH')

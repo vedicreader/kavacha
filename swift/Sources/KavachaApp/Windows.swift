@@ -61,6 +61,8 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     /// `mac-unified`: the page draws under a transparent title bar; `native` keeps the title bar
     var titlebar = Kavacha.config.titlebar
     var background = NSColor.windowBackgroundColor
+    /// the spec's `microphone`: whether the server's pages may record sound
+    var microphone = Kavacha.config.microphone ?? false
     var windows: [String: (NSWindow, WKWebView)] = [:]
     /// closed windows, kept for the Dock icon to bring back, most recent last
     var hidden: [String] = []
@@ -231,6 +233,19 @@ final class Windows: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
     func hideAll() { for (w, v) in windows.values { w.orderOut(nil); v.stopLoading(); v.loadHTMLString("", baseURL: nil) } }
 
     var front: WKWebView? { (NSApp.keyWindow?.contentView as? WKWebView) ?? windows.values.first { $0.0.isVisible }?.1 }
+
+    /// a page's getUserMedia: the microphone alone, for the server's own pages, in an app whose spec asks for it; macOS still asks the user the first time
+    func grantsCapture(scheme: String, host: String, port: Int, type: WKMediaCaptureType) -> Bool {
+        microphone && type == .microphone && scheme == "http" && ours(port) && Self.loopback(host)
+    }
+
+    func webView(_ w: WKWebView, requestMediaCapturePermissionFor o: WKSecurityOrigin, initiatedByFrame f: WKFrameInfo, type: WKMediaCaptureType, decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void) {
+        let fo = f.securityOrigin
+        // both the page's origin and the asking frame's: an embedded frame from elsewhere gets nothing
+        let ok = grantsCapture(scheme: o.protocol, host: o.host, port: o.port, type: type) && grantsCapture(scheme: fo.protocol, host: fo.host, port: fo.port, type: type)
+        note(w, "capture \(fo.protocol)://\(fo.host):\(fo.port) type=\(type.rawValue) -> \(ok ? "grant" : "deny")")
+        decisionHandler(ok ? .grant : .deny)
+    }
 
     /// a menu row: the page's own dispatcher in the front window
     func run(js: String) { front?.evaluateJavaScript(js) }

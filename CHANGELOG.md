@@ -2,6 +2,11 @@
 
 <!-- do not remove -->
 
+## 0.0.22
+
+- The launcher window answers a page's microphone request. It grants the microphone alone, and only when the page and the frame that asks are the app's own server on loopback. It denies the camera, other sites and other ports. macOS still asks the user the first time.
+- `kavacha.json` has `microphone`. `Thin` sets it to true when the spec's `[usage]` has `NSMicrophoneUsageDescription`. An older `kavacha.json` without the key gives no grant.
+
 ## 0.0.21
 
 - `kavacha lock` tries a GitHub 5xx and a dropped connection again, 5 times 5 seconds apart. GitHub answered 504 for minutes, and `verify` and `publish` stopped on the first one. A 404 is still an answer, except for the lock a brand-new release has not started to serve (`fetch(new=True)`).

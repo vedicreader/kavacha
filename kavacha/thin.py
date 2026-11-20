@@ -147,7 +147,8 @@ def _config(self):
                 channel=f'https://github.com/{self.repo}/releases/download' if self.repo else '', extras=list(self.extras),
                 bridge=dict(handler=self.name.lower(), flag=f'__{self.name.lower()}', methods=list(self.bridge), js_global=self.bridge_global),
                 sites=dict(self.sites), routes=dict(self.routes), capabilities=list(self.capabilities), menus=self.menus, menu_action_js=self.menu_action_js,
-                window=dict(self.window), titlebar=dict(style=self.titlebar, title_text=self.title_text, query='titlebar', drag_class='pywebview-drag-region'), cask=self.cask, debug_env=f'{self.env_prefix}WEBVIEW_DEBUG')
+                window=dict(self.window), titlebar=dict(style=self.titlebar, title_text=self.title_text, query='titlebar', drag_class='pywebview-drag-region'), cask=self.cask, debug_env=f'{self.env_prefix}WEBVIEW_DEBUG',
+                microphone='NSMicrophoneUsageDescription' in self.usage)
 Thin.config = _config
 
 # %% ../nbs/07_thin.ipynb #a2c33d6a

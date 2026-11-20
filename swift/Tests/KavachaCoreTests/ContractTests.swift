@@ -37,6 +37,10 @@ func fixture(_ name: String) -> Any { try! JSONSerialization.jsonObject(with: Da
         let f = tempDir().appending(path: "kavacha.json"); try JSONSerialization.data(withJSONObject: o).write(to: f)
         #expect(try LauncherConfig.load(f).titlebar.title_text, "an older kavacha.json still loads")
         #expect(LauncherConfig.named("App").titlebar.title_text)
+        o.removeValue(forKey: "microphone"); try JSONSerialization.data(withJSONObject: o).write(to: f)
+        #expect(try LauncherConfig.load(f).microphone == nil, "an older kavacha.json still loads, and grants no microphone")
+        o["microphone"] = true; try JSONSerialization.data(withJSONObject: o).write(to: f)
+        #expect(try LauncherConfig.load(f).microphone == true && LauncherConfig.named("App").microphone == nil)
     }
 
     @Test func theBridgeCases() {

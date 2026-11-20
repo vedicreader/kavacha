@@ -44,6 +44,18 @@ import WebKit
         #expect(ws.key(u("http://127.0.0.1:5/")) == Windows.homeKey, "the default workspace is the home window, not a second one")
     }
 
+    @Test func aPageMayRecordOnlyFromTheServerAndOnlyTheMicrophone() {
+        let ws = Windows(); ws.port = 5; ws.microphone = true
+        ws.learn(["id": "proj", "url": "http://127.0.0.1:7/"])
+        let g = { (s: String, h: String, p: Int, t: WKMediaCaptureType) in ws.grantsCapture(scheme: s, host: h, port: p, type: t) }
+        #expect(g("http", "127.0.0.1", 5, .microphone) && g("http", "127.0.0.1", 7, .microphone) && g("http", "x.localhost", 5, .microphone))
+        #expect(!g("http", "127.0.0.1", 5, .camera) && !g("http", "127.0.0.1", 5, .cameraAndMicrophone), "never the camera")
+        #expect(!g("http", "127.0.0.1", 8, .microphone) && !g("http", "evil.com", 5, .microphone) && !g("https", "127.0.0.1", 5, .microphone) && !g("file", "", 0, .microphone))
+        ws.microphone = false
+        #expect(!g("http", "127.0.0.1", 5, .microphone), "a spec with no microphone usage text grants nothing")
+        #expect(!Windows().microphone, "off by default")
+    }
+
     @Test func aWindowOpensAsTheOldAppsDidWithoutGoingOnScreen() {
         let ws = Windows()
         let (w, v) = ws.make(u("http://127.0.0.1:1/"), title: "leela — x")

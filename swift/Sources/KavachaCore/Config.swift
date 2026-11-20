@@ -55,6 +55,8 @@ public struct LauncherConfig: Codable, Sendable, Equatable {
     public var titlebar: Titlebar
     public var cask: String
     public var debug_env: String
+    /// true: the server's own pages may record sound (`Thin` sets it when the spec has `NSMicrophoneUsageDescription`); absent in an older kavacha.json
+    public var microphone: Bool? = nil
 
     public enum Refusal: Error, Equatable { case newerAPI(Int) }
 

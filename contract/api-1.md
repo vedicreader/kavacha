@@ -31,6 +31,7 @@ The app describes itself once, in `packaging/kavacha.toml` or `[tool.kavacha.thi
 | `window` | `{size, min_size, home, title_prefix}` |
 | `titlebar` | `{style, title_text, query, drag_class}`: the window's title bar; see below |
 | `cask`, `debug_env` | the Homebrew cask, and the variable that turns on the web inspector |
+| `microphone` | true when the spec's `[usage]` has `NSMicrophoneUsageDescription`: a page of the server (http, loopback, one of its ports) may record sound, never video, after macOS has asked the user once; every other capture request is denied. Absent means false |
 
 ## What is in the bundle
 

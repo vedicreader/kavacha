@@ -36,6 +36,7 @@
  "marker": ".leela-env.json",
  "menu_action_js": "leeAct({action})",
  "menus": "/app/menu.json",
+ "microphone": false,
  "name": "Leela",
  "python": "3.13",
  "routes": {
